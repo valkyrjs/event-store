@@ -39,7 +39,7 @@ export class Remote {
     return this.#db.collection("cursors");
   }
 
-  subscribe(type: ContainerType, id: string): RemoteSubscription {
+  subscribe(type: SubscriptionType, id: string): RemoteSubscription {
     const subscription = subscriptions.get(id);
     if (subscription.isEmpty === true) {
       subscription.unsubscribe = this.adapter.subscribe(type, id);
@@ -62,7 +62,7 @@ export class Remote {
     this.#queue.push({ type: "events", payload: record });
   }
 
-  async pull(type: ContainerType, id: string): Promise<void> {
+  async pull(type: SubscriptionType, id: string): Promise<void> {
     const timestamp = await this.getCursor(id);
     const records = await this.adapter.getEvents(type, id, timestamp);
     if (records.length > 0) {
@@ -130,11 +130,11 @@ export abstract class RemoteAdapter<Record extends EventRecord = EventRecord> {
     return subject;
   }
   abstract push(record: Record): Promise<void>;
-  abstract getEvents(type: ContainerType, id: string, cursor?: string): Promise<Record[]>;
-  abstract subscribe(type: ContainerType, id: string): () => void;
+  abstract getEvents(type: SubscriptionType, id: string, cursor?: string): Promise<Record[]>;
+  abstract subscribe(type: SubscriptionType, id: string): () => void;
 }
 
-export type ContainerType = "tenant" | "stream";
+export type SubscriptionType = "container" | "stream";
 
 export type RemoteSubscription = {
   promise: Promise<void>;

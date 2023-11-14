@@ -33,7 +33,10 @@ export class EventStore<Event extends LedgerEvent = LedgerEvent, Record extends 
   readonly #validator: Validator<Record>;
   readonly #projector: Projector<Record>;
 
-  constructor(readonly name: string, options: Options<Record>) {
+  constructor(
+    readonly name: string,
+    options: Options<Record>
+  ) {
     this.#remote = new Remote(options.remote);
     this.#events = options.events;
     this.#db = new IndexedDatabase({
@@ -43,7 +46,7 @@ export class EventStore<Event extends LedgerEvent = LedgerEvent, Record extends 
         {
           name: "events",
           indexes: [
-            ["tenant", { unique: false }],
+            ["container", { unique: false }],
             ["stream", { unique: false }],
             ["created", { unique: false }],
             ["recorded", { unique: false }]
@@ -111,8 +114,8 @@ export class EventStore<Event extends LedgerEvent = LedgerEvent, Record extends 
    |--------------------------------------------------------------------------------
    */
 
-  subscribeToTenant(tenantId: string): RemoteSubscription {
-    return this.#remote.subscribe("tenant", tenantId);
+  subscribeToContainer(containerId: string): RemoteSubscription {
+    return this.#remote.subscribe("container", containerId);
   }
 
   subscribeToStream(streamId: string): RemoteSubscription {
@@ -131,19 +134,19 @@ export class EventStore<Event extends LedgerEvent = LedgerEvent, Record extends 
    * @remarks Push is meant to take events from the local services and insert them as new event
    * records as non hydrated events.
    *
-   * @param tenant - Tenant the event belongs to.
-   * @param stream - Stream the event belongs to.
-   * @param event  - Event data to record.
+   * @param container - container the event belongs to.
+   * @param stream    - Stream the event belongs to.
+   * @param event     - Event data to record.
    */
   async push<T extends Event["type"]>(
-    tenant: string,
+    container: string,
     stream: string,
     event: ExcludeEmptyFields<Extract<Event, { type: T }>>
   ) {
     if (this.#events.has((event as any).type) === false) {
       throw new Error(`Event '${(event as any).type}' is not registered with the event store!`);
     }
-    const record = createEventRecord(tenant, stream, event as any);
+    const record = createEventRecord(container, stream, event as any);
     await this.insert(record as any, false);
   }
 

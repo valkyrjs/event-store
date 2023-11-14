@@ -19,15 +19,15 @@
     "test": "NODE_OPTIONS=--experimental-vm-modules npx jest"
   },
   "dependencies": {
-    "@valkyr/db": "1.0.0-rc1",
+    "@valkyr/db": "1.0.1",
     "@valkyr/queue": "1.0.0",
     "nanoid": "5.0.2",
     "rxjs": "7.8.1"
   },
   "devDependencies": {
     "@types/jest": "29.5.6",
-    "@typescript-eslint/eslint-plugin": "^6.8.0",
-    "@typescript-eslint/parser": "^6.8.0",
+    "@typescript-eslint/eslint-plugin": "6.8.0",
+    "@typescript-eslint/parser": "6.8.0",
     "eslint": "8.51.0",
     "eslint-config-prettier": "9.0.0",
     "eslint-plugin-anti-trojan-source": "1.1.1",
