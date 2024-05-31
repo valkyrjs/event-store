@@ -1,0 +1,29 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Deno
+        uses: maximousblk/setup-deno@v2 # Installs latest version
+
+      - run: deno task test
+      
+  publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish package
+        run: npx jsr publish
