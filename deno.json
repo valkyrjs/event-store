@@ -1,0 +1,42 @@
+{
+  "name": "@valkyr/event-store",
+  "version": "1.0.0-rc.8",
+  "exports": {
+    ".": "./mod.ts",
+    "./sqlite": "./stores/sqlite.ts",
+    "./valkyr": "./stores/valkyr.ts"
+  },
+  "imports": {
+    "@valkyr/db": "npm:@valkyr/db@1.0.1",
+    "ajv": "npm:ajv@8.14.0",
+    "drizzle-orm": "npm:drizzle-orm@0.30.10",
+    "json-refs": "npm:json-refs@3.0.15",
+    "json-schema": "npm:json-schema@0.4.0",
+    "json-schema-to-zod": "npm:json-schema-to-zod@2.1.0",
+    "nanoid": "npm:nanoid@5.0.7",
+    "prettier": "npm:prettier@3.2.5",
+    "sqlite": "jsr:@db/sqlite@0.11",
+    "zod": "npm:zod@3.23.8",
+    "std/": "https://deno.land/std@0.224.0/",
+    "~libraries/": "./libraries/",
+    "~stores/": "./stores/",
+    "~types/": "./types/"
+  },
+  "exclude": [
+    ".vscode"
+  ],
+  "lint": {
+    "rules": {
+      "exclude": [
+        "no-explicit-any",
+        "require-await"
+      ]
+    }
+  },
+  "fmt": {
+    "lineWidth": 120
+  },
+  "tasks": {
+    "test": "export ENVIRONMENT=testing && deno test --allow-all --unstable-ffi"
+  }
+}

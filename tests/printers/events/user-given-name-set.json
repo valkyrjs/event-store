@@ -1,0 +1,13 @@
+{
+  "type": "UserGivenNameSet",
+  "data": {
+    "given": {
+      "type": "string"
+    }
+  },
+  "meta": {
+    "auditor": {
+      "type": "string"
+    }
+  }
+}

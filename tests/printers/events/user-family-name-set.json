@@ -1,0 +1,13 @@
+{
+  "type": "UserFamilyNameSet",
+  "data": {
+    "family": {
+      "type": "string"
+    }
+  },
+  "meta": {
+    "auditor": {
+      "type": "string"
+    }
+  }
+}

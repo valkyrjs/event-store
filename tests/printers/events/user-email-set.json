@@ -1,0 +1,13 @@
+{
+  "type": "UserEmailSet",
+  "data": {
+    "email": {
+      "type": "string"
+    }
+  },
+  "meta": {
+    "auditor": {
+      "type": "string"
+    }
+  }
+}
