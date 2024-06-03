@@ -13,14 +13,14 @@ import {
   EventPushSuccess,
   EventValidationFailure,
 } from "~libraries/store.ts";
-import { contexts } from "~stores/tables/contexts/methods.ts";
 import type { Empty, Unknown } from "~types/common.ts";
 import type { Event, EventRecord, EventStatus, EventToRecord } from "~types/event.ts";
 import type { ReduceHandler, Reducer } from "~types/reducer.ts";
 import type { PushResult } from "~types/event-store.ts";
 
-import { db } from "./tables/db.ts";
+import { contexts } from "./tables/contexts/methods.ts";
 import { events } from "./tables/events/methods.ts";
+import { db } from "./tables/db.ts";
 
 /*
  |--------------------------------------------------------------------------------
