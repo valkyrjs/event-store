@@ -35,10 +35,10 @@ export async function printEvents({ paths, output, modules = [] }: Options) {
     output,
     await format(
       `
+        /* eslint-disable @typescript-eslint/no-unused-vars */
         // This is an auto generated file. Do not modify this file!
         
-        import type { Empty, Event } from "@valkyr/event-store";
-        import { type AnyZodObject, z } from "zod";
+        import { type AnyZodObject, type Empty, type Event, z } from "@valkyr/event-store";
     
         export const events = new Set([${names.map((event) => `"${event}"`).join(",")}] as const);
 
