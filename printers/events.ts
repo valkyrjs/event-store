@@ -1,4 +1,6 @@
-import { readdir, readFile, writeFile } from "node:fs/promises";
+/// <reference types="npm:@types/node" />
+
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { resolveRefs } from "json-refs";
@@ -31,6 +33,7 @@ export async function printEvents({ paths, output, modules = [] }: Options) {
   const { names, types, validators } = await getEventStoreContainer(paths, [
     ...modules.map((module) => module.events).flat(),
   ]);
+  await ensureOutputDirectory(output);
   await writeFile(
     output,
     await format(
@@ -63,6 +66,14 @@ export async function printEvents({ paths, output, modules = [] }: Options) {
  | Utilities
  |--------------------------------------------------------------------------------
  */
+
+async function ensureOutputDirectory(output: string): Promise<void> {
+  const target = output.split("/").slice(0, -1).join("/");
+  const dir = await readdir(target).catch(() => undefined);
+  if (dir === undefined) {
+    await mkdir(target, { recursive: true });
+  }
+}
 
 async function getEventStoreContainer(
   paths: string[],

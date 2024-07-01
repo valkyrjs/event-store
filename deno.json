@@ -1,6 +1,6 @@
 {
   "name": "@valkyr/event-store",
-  "version": "1.0.1-rc.1",
+  "version": "1.0.1",
   "exports": {
     ".": "./mod.ts",
     "./sqlite": "./stores/sqlite.ts",
