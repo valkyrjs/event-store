@@ -13,8 +13,8 @@ export class EventProvider {
    *
    * @param record - Event record to insert.
    */
-  async insert(record: EventRecord) {
-    return this.db.insert(schema).values(record);
+  async insert(record: EventRecord): Promise<void> {
+    await this.db.insert(schema).values(record);
   }
 
   /**

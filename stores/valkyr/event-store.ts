@@ -1,4 +1,4 @@
-import { type Collection, IndexedDatabase, MemoryDatabase } from "@valkyr/db";
+import type { Collection, IndexedDatabase, MemoryDatabase } from "@valkyr/db";
 import type { AnyZodObject } from "zod";
 
 import { Validator } from "~libraries/validator.ts";

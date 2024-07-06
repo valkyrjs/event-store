@@ -15,7 +15,7 @@
     "std/": "https://deno.land/std@0.224.0/",
     "@valkyr/db": "npm:@valkyr/db@1.0.1",
     "@valkyr/inverse": "jsr:@valkyr/inverse@1.0.0",
-    "@valkyr/testcontainers": "jsr:@valkyr/testcontainers@1.0.0-rc.1",
+    "@valkyr/testcontainers": "jsr:@valkyr/testcontainers@1.0.0",
     "ajv": "npm:ajv@8.14.0",
     "drizzle-kit": "npm:drizzle-kit@0.22.8",
     "drizzle-kit/": "npm:/drizzle-kit@0.22.8/",
@@ -36,6 +36,7 @@
     "rules": {
       "exclude": [
         "no-explicit-any",
+        "no-slow-types",
         "require-await"
       ]
     }

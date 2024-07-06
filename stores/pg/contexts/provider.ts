@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 
 import type { Context } from "~types/context.ts";
 
-import { EventStoreDB } from "../database.ts";
+import type { EventStoreDB } from "../database.ts";
 import { contexts as schema } from "./schema.ts";
 
 export class ContextProvider {
@@ -13,7 +13,7 @@ export class ContextProvider {
    *
    * @param contexts - List of context operations to execute.
    */
-  async handle(contexts: Context[]) {
+  async handle(contexts: Context[]): Promise<void> {
     for (const context of contexts) {
       if (context.op === "insert") {
         await this.insert(context.key, context.stream);
@@ -30,7 +30,7 @@ export class ContextProvider {
    * @param key    - Context key to add stream to.
    * @param stream - Stream to add to the context.
    */
-  async insert(key: string, stream: string) {
+  async insert(key: string, stream: string): Promise<void> {
     await this.db.insert(schema).values({ key, stream });
   }
 
@@ -39,7 +39,7 @@ export class ContextProvider {
    *
    * @param key - Context key to get event streams for.
    */
-  async getByKey(key: string) {
+  async getByKey(key: string): Promise<{ stream: string; key: string }[]> {
     return this.db.select().from(schema).where(eq(schema.key, key));
   }
 
@@ -49,7 +49,7 @@ export class ContextProvider {
    * @param key    - Context key to remove stream from.
    * @param stream - Stream to remove from context.
    */
-  async remove(key: string, stream: string) {
+  async remove(key: string, stream: string): Promise<void> {
     await this.db.delete(schema).where(and(eq(schema.key, key), eq(schema.stream, stream)));
   }
 }

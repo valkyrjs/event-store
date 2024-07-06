@@ -18,7 +18,7 @@ import type { Empty, Unknown } from "~types/common.ts";
 import type { Event, EventRecord, EventStatus, EventToRecord } from "~types/event.ts";
 import type { ReduceHandler, Reducer } from "~types/reducer.ts";
 import type { PushResult } from "~types/event-store.ts";
-import { Database } from "~utilities/database.ts";
+import type { Database } from "~utilities/database.ts";
 
 import { ContextProvider } from "./contexts/provider.ts";
 import { EventProvider } from "./events/provider.ts";

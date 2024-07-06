@@ -10,10 +10,11 @@ import type { Empty } from "./common.ts";
  * Event factory that defines the required input based on the event it is
  * representing.
  */
-export type EventFactory<E extends Event> = E["meta"] extends Empty ? E["data"] extends Empty ? () => E
-  : (data: E["data"]) => E
-  : E["data"] extends Empty ? (data: Empty, meta: E["meta"]) => E
-  : (data: E["data"], meta: E["meta"]) => E;
+export type EventFactory<TEvent extends Event> = TEvent["meta"] extends Empty
+  ? TEvent["data"] extends Empty ? () => TEvent
+  : (data: TEvent["data"]) => TEvent
+  : TEvent["data"] extends Empty ? (data: Empty, meta: TEvent["meta"]) => TEvent
+  : (data: TEvent["data"], meta: TEvent["meta"]) => TEvent;
 
 /*
  |--------------------------------------------------------------------------------
@@ -24,12 +25,12 @@ export type EventFactory<E extends Event> = E["meta"] extends Empty ? E["data"] 
 /**
  * Event wrapped to an EventRecord.
  */
-export type EventToRecord<E> = E extends Event ? EventRecord<E> : never;
+export type EventToRecord<TEvent> = TEvent extends Event ? EventRecord<TEvent> : never;
 
 /**
  * Event that has been persisted to a event store solution.
  */
-export type EventRecord<E extends Event = Event> = {
+export type EventRecord<TEvent extends Event = Event> = {
   /**
    * A unique event identifier.
    */
@@ -45,20 +46,20 @@ export type EventRecord<E extends Event = Event> = {
    * Type refers to the purpose of the event in a past tense descibing something
    * that has already happened.
    */
-  type: E["type"];
+  type: TEvent["type"];
 
   /**
    * Key holding event data that can be used to update one or several read
    * models and used to generate aggregate state for the stream in which the
    * event belongs.
    */
-  data: E["data"];
+  data: TEvent["data"];
 
   /**
    * Key holding meta data that is not directly tied to read models or used
    * in aggregate states.
    */
-  meta: E["meta"];
+  meta: TEvent["meta"];
 
   /**
    * An immutable iso timestamp representing the wall time when the event was created.
@@ -113,7 +114,7 @@ export type EventStatus = {
  * type, data and meta data which can be persisted to an EventRecord which can
  * be delivered for further utility.
  */
-export type Event<Type extends string = string, Data extends {} = Empty, Meta extends {} = Empty> = {
+export type Event<Type extends string = string, Data extends EventContent = any, Meta extends EventContent = any> = {
   /**
    * Event identifier describing the intent of the event in a past tense format.
    */
@@ -123,13 +124,13 @@ export type Event<Type extends string = string, Data extends {} = Empty, Meta ex
    * Stores the recorded partial piece of data that makes up a larger aggregate
    * state.
    */
-  data: Data extends Empty ? {} : Data;
+  data: Data extends EventContent ? Data : Empty;
 
   /**
    * Stores additional meta data about the event that is not directly related
    * to the aggregate state.
    */
-  meta: Meta extends Empty ? {} : Meta;
+  meta: Meta extends EventContent ? Meta : Empty;
 };
 
 /*
@@ -145,3 +146,5 @@ export type Event<Type extends string = string, Data extends {} = Empty, Meta ex
 export type EventAuditor = {
   auditor: string;
 };
+
+type EventContent = Record<string, unknown>;

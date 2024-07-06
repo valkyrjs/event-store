@@ -1,4 +1,4 @@
-import { Sql as PGDatabase } from "postgres";
+import type { Sql as PGDatabase } from "postgres";
 import type { AnyZodObject } from "zod";
 
 import { Validator } from "~libraries/validator.ts";
@@ -18,7 +18,7 @@ import type { Empty, Unknown } from "~types/common.ts";
 import type { Event, EventRecord, EventStatus, EventToRecord } from "~types/event.ts";
 import type { ReduceHandler, Reducer } from "~types/reducer.ts";
 import type { PushResult } from "~types/event-store.ts";
-import { Database } from "~utilities/database.ts";
+import type { Database } from "~utilities/database.ts";
 
 import { ContextProvider } from "./contexts/provider.ts";
 import { EventProvider } from "./events/provider.ts";
@@ -112,8 +112,8 @@ export class PGEventStore<TEvent extends Event, TRecord extends EventRecord = Ev
    * const foo = await eventStore.getStreamState("xyz", getFooState);
    * ```
    */
-  reducer<State extends Unknown>(reducer: Reducer<State, TRecord>, state: State): ReduceHandler<State, TRecord> {
-    return makeReducer<State, TRecord>(reducer, state);
+  reducer<TState extends Unknown>(reducer: Reducer<TState, TRecord>, state: TState): ReduceHandler<TState, TRecord> {
+    return makeReducer<TState, TRecord>(reducer, state);
   }
 
   /*
