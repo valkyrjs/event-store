@@ -1,12 +1,18 @@
-import { Database } from "sqlite";
-import { z } from "zod";
+import { PostgresTestContainer } from "@valkyr/testcontainers/postgres";
+import postgres from "postgres";
+import z from "zod";
 
 import { assertEquals } from "std/assert/mod.ts";
-import { beforeEach, describe, it } from "std/testing/bdd.ts";
+import { afterAll, afterEach, beforeAll, describe, it } from "std/testing/bdd.ts";
 
 import { EventDataValidationFailure, EventValidationFailure } from "~libraries/store.ts";
-import { SQLiteEventStore } from "~stores/sqlite/event-store.ts";
+import { PGEventStore } from "~stores/pg/event-store.ts";
 import type { Event } from "~types/event.ts";
+
+const DB_NAME = "sandbox";
+
+const container = await PostgresTestContainer.start("postgres:14");
+const store = await getEventStore(container.url(DB_NAME));
 
 /*
  |--------------------------------------------------------------------------------
@@ -14,11 +20,18 @@ import type { Event } from "~types/event.ts";
  |--------------------------------------------------------------------------------
  */
 
-describe("SQLite Event Store", () => {
-  let store: SQLiteEventStore<UserEvent>;
+describe("Postgres Event Store", () => {
+  beforeAll(async () => {
+    await container.create(DB_NAME);
+    await store.migrate();
+  });
 
-  beforeEach(async () => {
-    store = await getEventStore();
+  afterEach(async () => {
+    await container.client(DB_NAME)`TRUNCATE "event_store"."contexts","event_store"."events" CASCADE`;
+  });
+
+  afterAll(async () => {
+    await container.stop();
   });
 
   it("should successfully handle a UserCreated event", async () => {
@@ -114,6 +127,8 @@ describe("SQLite Event Store", () => {
   });
 
   it("should add a new context", async () => {
+    const store = await getEventStore(container.url(DB_NAME));
+
     store.contextor.register("UserCreated", () => [
       {
         key: "tenant:xyz",
@@ -159,16 +174,18 @@ describe("SQLite Event Store", () => {
   });
 
   it("should remove a context", async () => {
+    const store = await getEventStore(container.url(DB_NAME));
+
     store.contextor.register("UserCreated", () => [
       {
-        key: "tenant:xyz",
+        key: "tenant:zyx",
         op: "insert",
       },
     ]);
 
     store.contextor.register("UserEmailSet", () => [
       {
-        key: "tenant:xyz",
+        key: "tenant:zyx",
         op: "remove",
       },
     ]);
@@ -188,7 +205,7 @@ describe("SQLite Event Store", () => {
       },
     });
 
-    const res1 = await store.getEventsByContext("tenant:xyz");
+    const res1 = await store.getEventsByContext("tenant:zyx");
 
     assertEquals(res1.length, 1);
 
@@ -203,7 +220,7 @@ describe("SQLite Event Store", () => {
       },
     });
 
-    const res2 = await store.getEventsByContext("tenant:xyz");
+    const res2 = await store.getEventsByContext("tenant:zyx");
 
     assertEquals(res2.length, 0);
   });
@@ -235,9 +252,9 @@ describe("SQLite Event Store", () => {
  |--------------------------------------------------------------------------------
  */
 
-async function getEventStore() {
-  const store = new SQLiteEventStore<UserEvent>({
-    database: new Database(":memory:"),
+async function getEventStore(databaseUrl: string) {
+  return new PGEventStore<UserEvent>({
+    database: postgres(databaseUrl),
     events: new Set(
       [
         "UserCreated",
@@ -256,8 +273,6 @@ async function getEventStore() {
       ["UserGivenNameSet", z.object({ given: z.string() }).strict()],
     ]),
   });
-  await store.migrate();
-  return store;
 }
 
 /*

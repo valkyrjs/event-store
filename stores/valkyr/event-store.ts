@@ -1,13 +1,11 @@
+import { type Collection, IndexedDatabase, MemoryDatabase } from "@valkyr/db";
 import type { AnyZodObject } from "zod";
 
 import { Validator } from "~libraries/validator.ts";
 import { Projector } from "~libraries/projector.ts";
 import { createEventRecord } from "~libraries/event.ts";
 import { makeReducer } from "~libraries/reducer.ts";
-import { Contextor } from "~libraries/contextor.ts";
 import {
-  EventContextFailure,
-  EventDataValidationFailure,
   EventInsertionFailure,
   EventProjectionFailure,
   EventPushSuccess,
@@ -18,9 +16,7 @@ import type { Event, EventRecord, EventStatus, EventToRecord } from "~types/even
 import type { ReduceHandler, Reducer } from "~types/reducer.ts";
 import type { PushResult } from "~types/event-store.ts";
 
-import { contexts } from "./tables/contexts/methods.ts";
-import { events } from "./tables/events/methods.ts";
-import { db } from "./tables/db.ts";
+import { type Adapter, type Collections, getEventStoreDatabase } from "./database.ts";
 
 /*
  |--------------------------------------------------------------------------------
@@ -28,23 +24,35 @@ import { db } from "./tables/db.ts";
  |--------------------------------------------------------------------------------
  */
 
-export class SQLiteEventStore<E extends Event, Record extends EventRecord = EventToRecord<E>> {
-  readonly #events: EventList<E>;
-  readonly #validators: Map<E["type"], AnyZodObject>;
+export class ValkyrEventStore<E extends Event, Record extends EventRecord = EventToRecord<E>> {
+  readonly #config: Config<E, Record>;
+  readonly #database: IndexedDatabase<Collections> | MemoryDatabase<Collections>;
 
   readonly validator: Validator<Record>;
   readonly projector: Projector<Record>;
-  readonly contextor: Contextor<Record>;
 
-  constructor(config: Config<E>) {
-    db.instance = config.database;
-
-    this.#events = config.events;
-    this.#validators = config.validators;
+  constructor(config: Config<E, Record>) {
+    this.#config = config;
 
     this.validator = new Validator<Record>();
     this.projector = new Projector<Record>();
-    this.contextor = new Contextor<Record>(contexts.handle);
+
+    this.#database = getEventStoreDatabase(config.database);
+  }
+
+  /*
+   |--------------------------------------------------------------------------------
+   | Accessors
+   |--------------------------------------------------------------------------------
+   */
+
+  /**
+   * @valkyr/db 'events' collection instance which can be accessed to read events
+   * data directly from the persisted event store.
+   */
+  get events(): Collection<EventRecord> {
+    // @ts-expect-error Both database instances returns the same collection interface.
+    return this.#database.collection("events");
   }
 
   /*
@@ -66,8 +74,8 @@ export class SQLiteEventStore<E extends Event, Record extends EventRecord = Even
   /**
    * Push a new event onto the local event store database.
    *
-   * @remarks Push is meant to take events from the local services and insert them as new event
-   * records as non hydrated events.
+   * @remarks Push is meant to take events from the local services and insert them
+   * as new event records as non hydrated events.
    *
    * @param stream - Stream the event belongs to.
    * @param event  - Event data to record.
@@ -83,18 +91,19 @@ export class SQLiteEventStore<E extends Event, Record extends EventRecord = Even
   /**
    * Insert a new event to the local event store database.
    *
-   * @remarks This method triggers event validation and projection. If validation fails the event will
-   * not be inserted. If the projection fails the projection itself should be handling the error based
-   * on its own business logic.
+   * @remarks This method triggers event validation and projection. If validation
+   * fails the event will not be inserted. If the projection fails the projection
+   * itself should be handling the error based on its own business logic.
    *
-   * @remarks When hydration is true the event will be recorded with a new locally generated timestamp
-   * as its being recorded locally but is not the originator of the event creation.
+   * @remarks When hydration is true the event will be recorded with a new locally
+   * generated timestamp as its being recorded locally but is not the originator
+   * of the event creation.
    *
    * @param record   - EventRecord to insert.
    * @param hydrated - Whether the event is hydrated or not. (Optional)
    */
   async push(record: Record, hydrated = true): Promise<PushResult> {
-    if (this.#events.has(record.type) === false) {
+    if (this.#config.events.has(record.type) === false) {
       throw new Error(`Event '${record.type}' is not registered with the event store!`);
     }
 
@@ -108,31 +117,25 @@ export class SQLiteEventStore<E extends Event, Record extends EventRecord = Even
     }
 
     try {
-      const result = await this.getValidator(record.type).safeParseAsync(record.data);
-      if (result.success === false) {
-        return new EventDataValidationFailure(result.error.flatten().fieldErrors);
-      }
       await this.validator.validate(record);
     } catch (error) {
       return new EventValidationFailure(error.message);
     }
 
     try {
-      await events.insert(record);
+      await this.events.insertOne(record);
     } catch (error) {
       return new EventInsertionFailure(error.message);
-    }
-
-    try {
-      await this.contextor.push(record);
-    } catch (error) {
-      return new EventContextFailure(error.message);
     }
 
     try {
       await this.projector.project(record, { hydrated, outdated: status.outdated });
     } catch (error) {
       return new EventProjectionFailure(error.message);
+    }
+
+    if (hydrated === false) {
+      this.#config.remote.push(record);
     }
 
     return new EventPushSuccess(record);
@@ -161,12 +164,29 @@ export class SQLiteEventStore<E extends Event, Record extends EventRecord = Even
    * hosted stream. If another event of the same type in the streamis newer than
    * the provided event, the provided event is considered outdated.
    */
-  async getEventStatus(event: Record): Promise<EventStatus> {
-    const record = await events.getById(event.id);
-    if (record) {
+  async getEventStatus(record: Record): Promise<EventStatus> {
+    const result = await this.events.findOne({ id: record.id });
+    if (result !== undefined) {
       return { exists: true, outdated: true };
     }
-    return { exists: false, outdated: await events.checkOutdated(event) };
+    return { exists: false, outdated: await this.getOutdatedState(record) };
+  }
+
+  /**
+   * Check if provided event record is outdated in relation to the events
+   * persisted in the event store instance.
+   *
+   * @param record - Event record to get outdated state for.
+   */
+  async getOutdatedState({ stream, type, created }: Record): Promise<boolean> {
+    const count = await this.events.count({
+      stream,
+      type,
+      created: {
+        $gt: created,
+      },
+    });
+    return count > 0;
   }
 
   /**
@@ -174,8 +194,14 @@ export class SQLiteEventStore<E extends Event, Record extends EventRecord = Even
    *
    * @param options - Read options. (Optional)
    */
-  async getEvents(options?: EventReadOptions): Promise<Record[]> {
-    return (await events.find(options)) as Record[];
+  async getEvents({ cursor, direction }: EventReadOptions = {}): Promise<Record[]> {
+    const filter: any = {};
+    if (cursor !== undefined) {
+      filter.created = {
+        [direction === 1 ? "$gt" : "$lt"]: cursor,
+      };
+    }
+    return (await this.events.find(filter, { sort: { created: 1 } })) as Record[];
   }
 
   /**
@@ -207,21 +233,17 @@ export class SQLiteEventStore<E extends Event, Record extends EventRecord = Even
    * @param stream  - Stream to retrieve events for.
    * @param options - Stream logic options. _(Optional)_
    */
-  async getEventsByStream(stream: string, options?: EventReadOptions): Promise<Record[]> {
-    return (await events.getByStream(stream, options)) as Record[];
-  }
-
-  /**
-   * Retrieve all events under the given context key.
-   *
-   * @param key - Context key to retrieve events for.
-   */
-  async getEventsByContext(key: string, _?: Pagination): Promise<Record[]> {
-    const rows = await contexts.getByKey(key);
-    if (rows.length === 0) {
-      return [];
+  async getEventsByStream(stream: string, { cursor, direction }: EventReadOptions = {}): Promise<Record[]> {
+    const filter: any = {};
+    if (stream !== undefined) {
+      filter.stream = stream;
     }
-    return (await events.getByStreams(rows.map((row) => row.stream))) as Record[];
+    if (cursor !== undefined) {
+      filter.created = {
+        [direction === 1 ? "$gt" : "$lt"]: cursor,
+      };
+    }
+    return (await this.events.find(filter, { sort: { created: 1 } })) as Record[];
   }
 
   /*
@@ -237,7 +259,7 @@ export class SQLiteEventStore<E extends Event, Record extends EventRecord = Even
    * @param type - Event to get validator for.
    */
   getValidator(type: Record["type"]): AnyZodObject {
-    return this.#validators.get(type)!;
+    return this.#config.validators.get(type)!;
   }
 }
 
@@ -247,10 +269,13 @@ export class SQLiteEventStore<E extends Event, Record extends EventRecord = Even
  |--------------------------------------------------------------------------------
  */
 
-type Config<E extends Event> = {
-  database: any;
+type Config<E extends Event, Record extends EventRecord> = {
+  database: Adapter;
   events: EventList<E>;
-  validators: Map<E["type"], AnyZodObject>;
+  validators: Map<Record["type"], AnyZodObject>;
+  remote: {
+    push: (record: Record) => Promise<void>;
+  };
 };
 
 type EventList<E extends Event> = Set<E["type"]>;
@@ -270,31 +295,4 @@ type EventReadOptions = {
    * Fetch events in ascending or descending order.
    */
   direction?: 1 | -1;
-};
-
-export type Pagination = CursorPagination | OffsetPagination;
-
-export type CursorPagination = {
-  /**
-   * Fetches streams from the specific cursor. Cursor value represents
-   * a stream id.
-   */
-  cursor: string;
-
-  /**
-   * Fetch streams in ascending or descending order.
-   */
-  direction: 1 | -1;
-};
-
-export type OffsetPagination = {
-  /**
-   * Fetch streams from the specific offset.
-   */
-  offset: number;
-
-  /**
-   * Limit the number of streams to return.
-   */
-  limit: number;
 };

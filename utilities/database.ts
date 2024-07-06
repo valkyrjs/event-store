@@ -1,23 +1,11 @@
-import { type BunSQLiteDatabase, drizzle } from "drizzle-orm/bun-sqlite";
-import type { Database } from "sqlite";
+export class Database<TAdapter extends DrizzleAdapter> {
+  #hooks: Hooks<TAdapter>;
 
-let instance: BunSQLiteDatabase | undefined;
-
-export const db = {
-  set instance(db: Database) {
-    instance = drizzle(db);
-    createTables(db);
-  },
-
-  /**
-   * Drizzle instance for the database.
-   */
-  get instance(): BunSQLiteDatabase {
-    if (instance === undefined) {
-      throw new Error("Event Store: Database instance has not been resolved!");
-    }
-    return instance;
-  },
+  constructor(readonly instance: TAdapter, hooks: Hooks<TAdapter>) {
+    this.#hooks = hooks;
+    this.migrate = this.migrate.bind(this);
+    this.close = this.close.bind(this);
+  }
 
   /**
    * Creates an insert query.
@@ -43,9 +31,9 @@ export const db = {
    *   .returning();
    * ```
    */
-  get insert() {
+  get insert(): TAdapter["insert"] {
     return this.instance.insert.bind(this.instance);
-  },
+  }
 
   /**
    * Creates a select query.
@@ -83,9 +71,9 @@ export const db = {
    *   .from(cars);
    * ```
    */
-  get select() {
+  get select(): TAdapter["select"] {
     return this.instance.select.bind(this.instance);
-  },
+  }
 
   /**
    * Creates an insert query.
@@ -111,9 +99,9 @@ export const db = {
    *   .returning();
    * ```
    */
-  get update() {
+  get update(): TAdapter["update"] {
     return this.instance.update.bind(this.instance);
-  },
+  }
 
   /**
    * Creates a delete query.
@@ -140,40 +128,39 @@ export const db = {
    *   .returning();
    * ```
    */
-  get delete() {
+  get delete(): TAdapter["delete"] {
     return this.instance.delete.bind(this.instance);
-  },
+  }
 
   /**
-   * Closes the client connection.
+   * Run schema migrations on the connected database instance.
    */
-  close() {
-    instance = undefined;
-  },
-} as const;
+  async migrate(): Promise<void> {
+    await this.#hooks.onMigrateInstance(this.instance);
+  }
 
-async function createTables(db: Database) {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS valkyr_events (
-      id       TEXT    PRIMARY KEY,
-      stream   TEXT    NOT NULL,
-      type     TEXT    NOT NULL,
-      data     TEXT    NOT NULL,
-      meta     TEXT    NOT NULL,
-      recorded INTEGER NOT NULL,
-      created  INTEGER NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS 'stream_idx' ON 'valkyr_events' ('stream');
-    CREATE INDEX IF NOT EXISTS 'type_idx' ON 'valkyr_events' ('type');
-    CREATE INDEX IF NOT EXISTS 'recorded_idx' ON 'valkyr_events' ('recorded');
-    CREATE INDEX IF NOT EXISTS 'created_idx' ON 'valkyr_events' ('created');
-  `);
-  db.run(`
-    CREATE TABLE IF NOT EXISTS valkyr_contexts (
-      key    TEXT NOT NULL,
-      stream TEXT NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS 'key_idx' ON 'valkyr_contexts' ('key');
-    CREATE INDEX IF NOT EXISTS 'stream_idx' ON 'valkyr_contexts' ('stream');
-  `);
+  /**
+   * Disconnect the client and remove the instance.
+   */
+  async close() {
+    await this.#hooks.onCloseInstance();
+  }
 }
+
+/*
+ |--------------------------------------------------------------------------------
+ | Types
+ |--------------------------------------------------------------------------------
+ */
+
+type Hooks<TAdapter extends DrizzleAdapter> = {
+  onMigrateInstance(context: TAdapter): Promise<void>;
+  onCloseInstance(): Promise<void>;
+};
+
+type DrizzleAdapter = {
+  insert: any;
+  select: any;
+  update: any;
+  delete: any;
+};

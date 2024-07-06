@@ -3,8 +3,9 @@ import { assertEquals } from "std/assert/mod.ts";
 import { beforeEach, describe, it } from "std/testing/bdd.ts";
 
 import { EventValidationFailure } from "~libraries/store.ts";
-import { getEventStoreDatabase, ValkyrEventStore } from "~stores/valkyr.ts";
 import type { Event } from "~types/event.ts";
+
+import { ValkyrEventStore } from "~stores/valkyr/event-store.ts";
 
 /*
  |--------------------------------------------------------------------------------
@@ -120,7 +121,7 @@ describe("Valkyr Event Store", () => {
 
 function getEventStore() {
   return new ValkyrEventStore<UserEvent>({
-    database: getEventStoreDatabase("memorydb"),
+    database: "memorydb",
     events: new Set(
       [
         "UserCreated",
