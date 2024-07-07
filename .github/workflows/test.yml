@@ -9,6 +9,16 @@ on:
       - main
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Deno
+        uses: maximousblk/setup-deno@v2 # Installs latest version
+
+      - run: deno lint
+      
   test:
     runs-on: ubuntu-latest
     steps:
