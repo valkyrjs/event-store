@@ -1,3 +1,34 @@
+/**
+ * @module
+ *
+ * This module contains an event store solution for postgres.
+ *
+ * @example
+ * ```ts
+ * import psql from "postgres";
+ *
+ * import { PGEventStore } from "@valkyr/event-store/pg";
+ * import { z } from "@valkyr/event-store";
+ *
+ * const eventStore = new PGEventStore<MyEvents>({
+ *   database: psql("postgres/connection/string"),
+ *   events: Set<[
+ *     "EventA",
+ *     "EventB"
+ *   ] as const>,
+ *   validators: new Map<MyEvents["type"], any>([
+ *     ["EventA", z.object({ foo: z.string() }).strict()],
+ *     ["EventB", z.object({ bar: z.string() }).strict()],
+ *   ]),
+ * });
+ *
+ * type MyEvents = EventA | EventB;
+ *
+ * type EventA = Event<"EventA", { foo: string }, { domain: string }>;
+ * type EventB = Event<"EventB", { bar: string }, { domain: string }>;
+ * ```
+ */
+
 import type { Sql as PGDatabase } from "postgres";
 import type { AnyZodObject } from "zod";
 
@@ -31,34 +62,8 @@ import { type EventStoreDB, makeEventStoreDatabase } from "./database.ts";
  */
 
 /**
- * Postgres Event Store.
- *
  * Provides a solution to easily validate, generate, and project events to a
- * persistent data store.
- *
- * ```ts
- * import psql from "postgres";
- *
- * import { PGEventStore } from "@valkyr/event-store/pg";
- * import { z } from "@valkyr/event-store";
- *
- * const eventStore = new PGEventStore<MyEvents>({
- *   database: psql("postgres/connection/string"),
- *   events: Set<[
- *     "EventA",
- *     "EventB"
- *   ] as const>,
- *   validators: new Map<MyEvents["type"], any>([
- *     ["EventA", z.object({ foo: z.string() }).strict()],
- *     ["EventB", z.object({ bar: z.string() }).strict()],
- *   ]),
- * });
- *
- * type MyEvents = EventA | EventB;
- *
- * type EventA = Event<"EventA", { foo: string }, { domain: string }>;
- * type EventB = Event<"EventB", { bar: string }, { domain: string }>;
- * ```
+ * postgres database.
  */
 export class PGEventStore<TEvent extends Event, TRecord extends EventRecord = EventToRecord<TEvent>> {
   readonly #database: Database<EventStoreDB>;

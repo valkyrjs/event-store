@@ -1,24 +1,26 @@
 {
-  "type": "UserCreated",
-  "data": {
-    "name": {
-      "type": "object",
-      "properties": {
-        "given": {
-          "type": "string"
-        },
-        "family": {
-          "type": "string"
+  "event": {
+    "type": "UserCreated",
+    "data": {
+      "name": {
+        "type": "object",
+        "properties": {
+          "given": {
+            "type": "string"
+          },
+          "family": {
+            "type": "string"
+          }
         }
+      },
+      "email": {
+        "type": "string"
       }
     },
-    "email": {
-      "type": "string"
-    }
-  },
-  "meta": {
-    "auditor": {
-      "type": "string"
+    "meta": {
+      "auditor": {
+        "type": "string"
+      }
     }
   }
 }

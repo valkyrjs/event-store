@@ -1,5 +1,5 @@
 export * from "zod";
 
-export * from "./printers/events.ts";
-export * from "./types/common.ts";
-export * from "./types/event.ts";
+export { printEvents } from "./printers/printer.ts";
+export type { Empty } from "./types/common.ts";
+export type { Event } from "./types/event.ts";

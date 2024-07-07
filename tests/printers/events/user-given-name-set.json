@@ -1,13 +1,15 @@
 {
-  "type": "UserGivenNameSet",
-  "data": {
-    "given": {
-      "type": "string"
-    }
-  },
-  "meta": {
-    "auditor": {
-      "type": "string"
+  "event": {
+    "type": "UserGivenNameSet",
+    "data": {
+      "given": {
+        "type": "string"
+      }
+    },
+    "meta": {
+      "auditor": {
+        "type": "string"
+      }
     }
   }
 }

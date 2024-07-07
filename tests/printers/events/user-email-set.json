@@ -1,13 +1,15 @@
 {
-  "type": "UserEmailSet",
-  "data": {
-    "email": {
-      "type": "string"
+  "event": {
+    "type": "UserEmailSet",
+    "data": {
+      "email": {
+        "type": "string"
+      }
+    },
+    "meta": {
+      "auditor": {
+        "type": "string"
+      }
     }
-  },
-  "meta": {
-    "auditor": {
-      "type": "string"
-    }
-  }
+  }  
 }

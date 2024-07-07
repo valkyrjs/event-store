@@ -11,7 +11,6 @@
       "jsr:@std/fs@^0.221.0": "jsr:@std/fs@0.221.0",
       "jsr:@std/path@0.217": "jsr:@std/path@0.217.0",
       "jsr:@std/path@^0.221.0": "jsr:@std/path@0.221.0",
-      "jsr:@valkyr/inverse@1.0.0": "jsr:@valkyr/inverse@1.0.0",
       "jsr:@valkyr/testcontainers@1.0.0": "jsr:@valkyr/testcontainers@1.0.0",
       "npm:@testcontainers/postgresql@10.10.1": "npm:@testcontainers/postgresql@10.10.1",
       "npm:@types/node": "npm:@types/node@18.16.19",
@@ -79,9 +78,6 @@
         "dependencies": [
           "jsr:@std/assert@^0.221.0"
         ]
-      },
-      "@valkyr/inverse@1.0.0": {
-        "integrity": "656bdd5bca1db1831fcdbe0c02fc8781445d94e2d7b1900461ba8db5f327d771"
       },
       "@valkyr/testcontainers@1.0.0": {
         "integrity": "45f37d88c081d10f7e583af8ddcbbecd1bbb89a432049226cec24e5bdfae8a02",
@@ -1411,7 +1407,6 @@
   "workspace": {
     "dependencies": [
       "jsr:@db/sqlite@0.11",
-      "jsr:@valkyr/inverse@1.0.0",
       "jsr:@valkyr/testcontainers@1.0.0",
       "npm:@valkyr/db@1.0.1",
       "npm:ajv@8.14.0",

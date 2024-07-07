@@ -1,16 +1,22 @@
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { resolveRefs } from "json-refs";
 import { jsonSchemaToZod } from "json-schema-to-zod";
 import { format } from "prettier";
 
-import { assertEventConfig, type EventConfig } from "./asserts/events.ts";
+import { assertConfig, type Config } from "./asserts/events.ts";
+import { ensureOutputDirectory } from "./utilities/files.ts";
 import { jsonSchema } from "./utilities/json-schema.ts";
+import { getEventType, getImports } from "./types.ts";
 
 /**
  * Consumes a list of *.json files stored under given paths and generates a new
  * events file ready for consumption by an event store instance.
+ *
+ * @param options.paths   - Paths containing *.json event configuration files.
+ * @param options.output  - Target file to generate the events to.
+ * @param options.modules - List of modules to print events for.
  *
  * @example
  *
@@ -18,14 +24,13 @@ import { jsonSchema } from "./utilities/json-schema.ts";
  * import { printEvents } from "@valkyr/event-store";
  *
  * await printEvents({
- *   paths: ["path/to/events-1", "path/to/events-2"]
- *   output: "path/to/events.ts"
+ *   paths: [
+ *    "path/to/events-1",
+ *    "path/to/events-2"
+ *   ],
+ *   output: "path/to/events.ts",
  * });
  * ```
- *
- * @param options.paths   - Paths containing *.json event configuration files.
- * @param options.output  - Target file to generate the events to.
- * @param options.modules - List of modules to print events for.
  */
 export async function printEvents({ paths, output, modules = [] }: Options) {
   const { names, types, validators } = await getEventStoreContainer(paths, [
@@ -65,14 +70,6 @@ export async function printEvents({ paths, output, modules = [] }: Options) {
  |--------------------------------------------------------------------------------
  */
 
-async function ensureOutputDirectory(output: string): Promise<void> {
-  const target = output.split("/").slice(0, -1).join("/");
-  const dir = await readdir(target).catch(() => undefined);
-  if (dir === undefined) {
-    await mkdir(target, { recursive: true });
-  }
-}
-
 async function getEventStoreContainer(
   paths: string[],
   module: any[] = [],
@@ -85,8 +82,8 @@ async function getEventStoreContainer(
     imports: [],
   };
 
-  const events = [...(await getEvents(paths)), ...getModuleEvents(module)];
-  for (const event of events) {
+  const configs = [...(await getLocalConfigs(paths)), ...getModuleConfigs(module)];
+  for (const { event } of configs) {
     const type = event.type;
     container.names.push(type);
     container.types.push(getEventType(event));
@@ -96,21 +93,28 @@ async function getEventStoreContainer(
     container.validators.set(type, await getEventValidator(type, event.data ?? {}));
   }
 
-  container.imports = getImports(events);
+  container.imports = getImports(configs);
 
   return container;
 }
 
-async function getEvents(paths: string[]): Promise<EventConfig[]> {
-  const events: EventConfig[] = [];
+async function getLocalConfigs(paths: string[]): Promise<Config[]> {
+  const events: Config[] = [];
   for (const path of paths) {
     for (const eventPath of await readdir(path)) {
-      const event = JSON.parse(new TextDecoder().decode(await readFile(join(path, eventPath))));
-      assertEventConfig(event);
-      events.push(event);
+      const config = JSON.parse(new TextDecoder().decode(await readFile(join(path, eventPath))));
+      assertConfig(config);
+      events.push(config);
     }
   }
   return events;
+}
+
+function getModuleConfigs(configs: any[]): Config[] {
+  for (const config of configs) {
+    assertConfig(config);
+  }
+  return configs;
 }
 
 async function getEventValidator(name: string, data: any) {
@@ -136,48 +140,6 @@ function populateProperties(props: any) {
     }
   }
   return props;
-}
-
-function getModuleEvents(events: any[]): EventConfig[] {
-  for (const event of events) {
-    assertEventConfig(event);
-  }
-  return events;
-}
-
-function getEventType(event: EventConfig) {
-  let data = "Empty";
-  if (event.data !== undefined) {
-    data = jsonSchema.compile({
-      type: "object",
-      properties: event.data,
-    });
-  }
-  let meta = "Empty";
-  if (event.meta !== undefined) {
-    meta = jsonSchema.compile({
-      type: "object",
-      properties: event.meta,
-    });
-  }
-  return `export type ${event.type} = Event<"${event.type}", ${data}, ${meta}>;`;
-}
-
-function getImports(items: any[]) {
-  const imports: any = {};
-  for (const item of items) {
-    for (const key in item.imports ?? {}) {
-      if (imports[key] === undefined) {
-        imports[key] = new Set<string>();
-      }
-      item.imports[key].forEach((value: string) => imports[key].add(value));
-    }
-  }
-  const output: string[] = [];
-  for (const key in imports) {
-    output.push(`import type { ${Array.from(imports[key]).join(", ")} } from "${key}";`);
-  }
-  return output;
 }
 
 /*

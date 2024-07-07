@@ -1,13 +1,15 @@
 {
-  "type": "UserFamilyNameSet",
-  "data": {
-    "family": {
-      "type": "string"
+  "event": {
+    "type": "UserFamilyNameSet",
+    "data": {
+      "family": {
+        "type": "string"
+      }
+    },
+    "meta": {
+      "auditor": {
+        "type": "string"
+      }
     }
-  },
-  "meta": {
-    "auditor": {
-      "type": "string"
-    }
-  }
+  }  
 }
