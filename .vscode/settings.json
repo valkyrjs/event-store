@@ -4,5 +4,11 @@
   "editor.formatOnSave": true,
   "[typescript]": { 
     "editor.defaultFormatter": "denoland.vscode-deno" 
-  }
+  },
+  "json.schemas": [
+    {
+      "fileMatch": ["/**/events/*.json"],
+      "url": "./schemas/event.json"
+    }
+  ],
 }
