@@ -1,18 +1,3 @@
-import type {
-  EventContextFailure,
-  EventInsertionFailure,
-  EventProjectionFailure,
-  EventPushSuccess,
-  EventValidationFailure,
-} from "~libraries/store.ts";
-
-export type PushResult =
-  | EventPushSuccess
-  | EventValidationFailure
-  | EventInsertionFailure
-  | EventContextFailure
-  | EventProjectionFailure;
-
 export type EventReadOptions = {
   /**
    * Fetch events from a specific point in time. The direction of which

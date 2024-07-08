@@ -20,7 +20,7 @@
           "definition": "Metadata pertaining to the Event"
         }
       },
-      "required": ["type", "data", "meta"]
+      "required": ["type"]
     }
   },
   "additionalProperties": false

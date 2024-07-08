@@ -48,7 +48,9 @@ export async function printEvents({ paths, output, modules = [] }: Options) {
     
         export const events = new Set([${names.map((event) => `"${event}"`).join(",")}] as const);
 
-        export const validators = new Map<${names.map((name) => `"${name}"`).join(" | ")}, AnyZodObject>([
+        export const validators = new Map<${
+        Array.from(validators.keys()).map((name) => `"${name}"`).join(" | ")
+      }, AnyZodObject>([
           ${Array.from(validators.entries()).map(([key, value]) => `["${key}", ${value}]`).join(",")}
         ]);
 
@@ -89,8 +91,8 @@ async function getEventStoreContainer(
     container.types.push(getEventType(event));
     if (event.data !== undefined) {
       container.props.add({ name: type, props: jsonSchema.propertyNames(event.data) });
+      container.validators.set(type, await getEventValidator(type, event.data));
     }
-    container.validators.set(type, await getEventValidator(type, event.data ?? {}));
   }
 
   container.imports = getImports(configs);

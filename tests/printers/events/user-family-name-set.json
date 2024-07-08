@@ -5,11 +5,6 @@
       "family": {
         "type": "string"
       }
-    },
-    "meta": {
-      "auditor": {
-        "type": "string"
-      }
     }
   }  
 }

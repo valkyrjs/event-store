@@ -3,10 +3,10 @@ import { resolve } from "node:path";
 import { Database } from "sqlite";
 import { z } from "zod";
 
-import { assertEquals } from "std/assert/mod.ts";
+import { assertEquals, assertRejects } from "std/assert/mod.ts";
 import { afterAll, beforeEach, describe, it } from "std/testing/bdd.ts";
 
-import { EventDataValidationFailure, EventValidationFailure } from "~libraries/store.ts";
+import { EventDataValidationFailure, EventValidationFailure } from "../../libraries/errors.ts";
 import { migrate, SQLiteEventStore } from "~stores/sqlite/event-store.ts";
 import type { Event } from "~types/event.ts";
 
@@ -106,18 +106,20 @@ describe("SQLite Event Store", () => {
       },
     });
 
-    assertEquals(
-      await store.add({
-        stream,
-        type: "UserEmailSet",
-        data: {
-          email: "john.doe@fixture.none",
-        },
-        meta: {
-          auditor: "super",
-        },
-      }),
-      new EventValidationFailure("Email has not changed"),
+    assertRejects(
+      async () =>
+        await store.add({
+          stream,
+          type: "UserEmailSet",
+          data: {
+            email: "john.doe@fixture.none",
+          },
+          meta: {
+            auditor: "super",
+          },
+        }),
+      EventValidationFailure,
+      "Email has not changed",
     );
   });
 
@@ -217,22 +219,20 @@ describe("SQLite Event Store", () => {
   });
 
   it("should reject events with invalid data", async () => {
-    assertEquals(
-      await store.add({
-        type: "UserCreated",
-        data: {
-          name: {
-            given: "test",
+    assertRejects(
+      async () =>
+        await store.add({
+          type: "UserCreated",
+          data: {
+            name: {
+              given: "test",
+            },
           },
-        },
-        meta: {
-          auditor: "super",
-        },
-      } as any),
-      new EventDataValidationFailure({
-        email: ["Required"],
-        name: ["Required"],
-      }),
+          meta: {
+            auditor: "super",
+          },
+        } as any),
+      EventDataValidationFailure,
     );
   });
 });

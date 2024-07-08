@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { assertEquals } from "std/assert/mod.ts";
+import { assertEquals, assertRejects } from "std/assert/mod.ts";
 import { beforeEach, describe, it } from "std/testing/bdd.ts";
 
-import { EventValidationFailure } from "~libraries/store.ts";
+import { EventValidationFailure } from "../../libraries/errors.ts";
 import type { Event } from "~types/event.ts";
 
 import { ValkyrEventStore } from "~stores/valkyr/event-store.ts";
@@ -97,18 +97,20 @@ describe("Valkyr Event Store", () => {
       },
     });
 
-    assertEquals(
-      await store.add({
-        stream,
-        type: "UserEmailSet",
-        data: {
-          email: "john.doe@fixture.none",
-        },
-        meta: {
-          auditor: "super",
-        },
-      }),
-      new EventValidationFailure("Email has not changed"),
+    assertRejects(
+      async () =>
+        await store.add({
+          stream,
+          type: "UserEmailSet",
+          data: {
+            email: "john.doe@fixture.none",
+          },
+          meta: {
+            auditor: "super",
+          },
+        }),
+      EventValidationFailure,
+      "Email has not changed",
     );
   });
 });

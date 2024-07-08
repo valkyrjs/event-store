@@ -36,16 +36,10 @@ import { Validator } from "~libraries/validator.ts";
 import { Projector } from "~libraries/projector.ts";
 import { createEventRecord } from "~libraries/event.ts";
 import { makeReducer } from "~libraries/reducer.ts";
-import {
-  EventInsertionFailure,
-  EventProjectionFailure,
-  EventPushSuccess,
-  EventValidationFailure,
-} from "~libraries/store.ts";
+import { EventInsertionFailure, EventProjectionFailure, EventValidationFailure } from "../../libraries/errors.ts";
 import type { Empty, Unknown } from "~types/common.ts";
 import type { Event, EventRecord, EventStatus, EventToRecord } from "~types/event.ts";
 import type { ReduceHandler, Reducer } from "~types/reducer.ts";
-import type { PushResult } from "~types/event-store.ts";
 
 import { type Adapter, type Collections, getEventStoreDatabase } from "./database.ts";
 
@@ -119,7 +113,7 @@ export class ValkyrEventStore<E extends Event, Record extends EventRecord = Even
     event: ExcludeEmptyFields<Extract<E, { type: T }>> & {
       stream?: string;
     },
-  ): Promise<PushResult> {
+  ): Promise<string> {
     return this.push(createEventRecord(event as any) as Record, false);
   }
 
@@ -137,14 +131,14 @@ export class ValkyrEventStore<E extends Event, Record extends EventRecord = Even
    * @param record   - EventRecord to insert.
    * @param hydrated - Whether the event is hydrated or not. (Optional)
    */
-  async push(record: Record, hydrated = true): Promise<PushResult> {
+  async push(record: Record, hydrated = true): Promise<string> {
     if (this.#config.events.has(record.type) === false) {
       throw new Error(`Event '${record.type}' is not registered with the event store!`);
     }
 
     const status = await this.getEventStatus(record);
     if (status.exists === true) {
-      return new EventPushSuccess(record);
+      return record.stream;
     }
 
     if (hydrated === true) {
@@ -154,26 +148,26 @@ export class ValkyrEventStore<E extends Event, Record extends EventRecord = Even
     try {
       await this.validator.validate(record);
     } catch (error) {
-      return new EventValidationFailure(error.message);
+      throw new EventValidationFailure(error.message);
     }
 
     try {
       await this.events.insertOne(record);
     } catch (error) {
-      return new EventInsertionFailure(error.message);
+      throw new EventInsertionFailure(error.message);
     }
 
     try {
       await this.projector.project(record, { hydrated, outdated: status.outdated });
     } catch (error) {
-      return new EventProjectionFailure(error.message);
+      throw new EventProjectionFailure(error.message);
     }
 
     if (hydrated === false) {
       this.#config.remote.push(record);
     }
 
-    return new EventPushSuccess(record);
+    return record.stream;
   }
 
   /*

@@ -4,11 +4,12 @@ import { PostgresTestContainer } from "@valkyr/testcontainers/postgres";
 import postgres from "postgres";
 import z from "zod";
 
-import { assertEquals } from "std/assert/mod.ts";
+import { assertEquals, assertRejects } from "std/assert/mod.ts";
 import { afterAll, afterEach, beforeAll, describe, it } from "std/testing/bdd.ts";
 
-import { EventDataValidationFailure, EventValidationFailure } from "~libraries/store.ts";
+import { EventDataValidationFailure, EventValidationFailure } from "~libraries/errors.ts";
 import { migrate, PGEventStore } from "~stores/pg/event-store.ts";
+import type { Empty } from "~types/common.ts";
 import type { Event } from "~types/event.ts";
 
 const DB_NAME = "sandbox";
@@ -42,7 +43,7 @@ describe("Postgres Event Store", () => {
     let result: string = "";
 
     store.projector.on("UserCreated", async (record) => {
-      result = `${record.data.name.given} ${record.data.name.family} | ${record.data.email} | ${record.meta.auditor}`;
+      result = `${record.data.name.given} ${record.data.name.family} | ${record.data.email}`;
     });
 
     await store.add({
@@ -54,12 +55,21 @@ describe("Postgres Event Store", () => {
         },
         email: "john.doe@fixture.none",
       },
-      meta: {
-        auditor: "super",
-      },
     });
 
-    assertEquals(result, "John Doe | john.doe@fixture.none | super");
+    assertEquals(result, "John Doe | john.doe@fixture.none");
+  });
+
+  it("should successfully handle a UserDeactivated event", async () => {
+    let result: string = "";
+
+    store.projector.on("UserDeactivated", async () => {
+      result = "success";
+    });
+
+    await store.add({ type: "UserDeactivated" });
+
+    assertEquals(result, "success");
   });
 
   it("should reject UserEmailSet if the email has not changed", async () => {
@@ -110,23 +120,22 @@ describe("Postgres Event Store", () => {
         },
         email: "john.doe@fixture.none",
       },
-      meta: {
-        auditor: "super",
-      },
     });
 
-    assertEquals(
-      await store.add({
-        stream,
-        type: "UserEmailSet",
-        data: {
-          email: "john.doe@fixture.none",
-        },
-        meta: {
-          auditor: "super",
-        },
-      }),
-      new EventValidationFailure("Email has not changed"),
+    assertRejects(
+      async () =>
+        await store.add({
+          stream,
+          type: "UserEmailSet",
+          data: {
+            email: "john.doe@fixture.none",
+          },
+          meta: {
+            auditor: "super",
+          },
+        }),
+      EventValidationFailure,
+      "Email has not changed",
     );
   });
 
@@ -149,9 +158,6 @@ describe("Postgres Event Store", () => {
         },
         email: "john.doe@fixture.none",
       },
-      meta: {
-        auditor: "super",
-      },
     });
 
     const res1 = await store.getEventsByContext("tenant:xyz");
@@ -166,9 +172,6 @@ describe("Postgres Event Store", () => {
           family: "Doe",
         },
         email: "jane.doe@fixture.none",
-      },
-      meta: {
-        auditor: "super",
       },
     });
 
@@ -204,9 +207,6 @@ describe("Postgres Event Store", () => {
         },
         email: "john.doe@fixture.none",
       },
-      meta: {
-        auditor: "super",
-      },
     });
 
     const res1 = await store.getEventsByContext("tenant:zyx");
@@ -230,22 +230,20 @@ describe("Postgres Event Store", () => {
   });
 
   it("should reject events with invalid data", async () => {
-    assertEquals(
-      await store.add({
-        type: "UserCreated",
-        data: {
-          name: {
-            given: "test",
+    assertRejects(
+      async () =>
+        await store.add({
+          type: "UserCreated",
+          data: {
+            name: {
+              given: "test",
+            },
           },
-        },
-        meta: {
-          auditor: "super",
-        },
-      } as any),
-      new EventDataValidationFailure({
-        email: ["Required"],
-        name: ["Required"],
-      }),
+          meta: {
+            auditor: "super",
+          },
+        } as any),
+      EventDataValidationFailure,
     );
   });
 });
@@ -265,6 +263,7 @@ async function getEventStore(databaseUrl: string) {
         "UserGivenNameSet",
         "UserFamilyNameSet",
         "UserEmailSet",
+        "UserDeactivated",
       ] as const,
     ),
     validators: new Map<UserEvent["type"], any>([
@@ -285,7 +284,7 @@ async function getEventStore(databaseUrl: string) {
  |--------------------------------------------------------------------------------
  */
 
-type UserEvent = UserCreated | UserGivenNameSet | UserFamilyNameSet | UserEmailSet;
+type UserEvent = UserCreated | UserGivenNameSet | UserFamilyNameSet | UserEmailSet | UserDeactivated;
 
 type UserCreated = Event<
   "UserCreated",
@@ -296,8 +295,9 @@ type UserCreated = Event<
     };
     email: string;
   },
-  { auditor: string }
+  Empty
 >;
-type UserGivenNameSet = Event<"UserGivenNameSet", { given: string }, { auditor: string }>;
-type UserFamilyNameSet = Event<"UserFamilyNameSet", { family: string }, { auditor: string }>;
+type UserGivenNameSet = Event<"UserGivenNameSet", { given: string }, Empty>;
+type UserFamilyNameSet = Event<"UserFamilyNameSet", { family: string }, Empty>;
 type UserEmailSet = Event<"UserEmailSet", { email: string }, { auditor: string }>;
+type UserDeactivated = Event<"UserDeactivated", Empty, Empty>;

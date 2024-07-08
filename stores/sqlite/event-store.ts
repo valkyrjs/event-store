@@ -42,13 +42,12 @@ import {
   EventDataValidationFailure,
   EventInsertionFailure,
   EventProjectionFailure,
-  EventPushSuccess,
   EventValidationFailure,
-} from "~libraries/store.ts";
+} from "../../libraries/errors.ts";
 import type { Empty, Unknown } from "~types/common.ts";
 import type { Event, EventRecord, EventStatus, EventToRecord } from "~types/event.ts";
 import type { ReduceHandler, Reducer } from "~types/reducer.ts";
-import type { EventReadOptions, Pagination, PushResult } from "~types/event-store.ts";
+import type { EventReadOptions, Pagination } from "~types/event-store.ts";
 import type { Database } from "~utilities/database.ts";
 
 import { ContextProvider } from "./contexts/provider.ts";
@@ -165,7 +164,7 @@ export class SQLiteEventStore<TEvent extends Event, TRecord extends EventRecord 
     event: ExcludeEmptyFields<Extract<TEvent, { type: TEventType }>> & {
       stream?: string;
     },
-  ): Promise<PushResult> {
+  ): Promise<string> {
     return this.push(createEventRecord(event as any) as TRecord, false);
   }
 
@@ -182,49 +181,53 @@ export class SQLiteEventStore<TEvent extends Event, TRecord extends EventRecord 
    * @param record   - EventRecord to insert.
    * @param hydrated - Whether the event is hydrated or not. (Optional)
    */
-  async push(record: TRecord, hydrated = true): Promise<PushResult> {
+  async push(record: TRecord, hydrated = true): Promise<string> {
     if (this.#events.has(record.type) === false) {
       throw new Error(`Event '${record.type}' is not registered with the event store!`);
     }
 
     const status = await this.getEventStatus(record);
     if (status.exists === true) {
-      return new EventPushSuccess(record);
+      return record.stream;
     }
 
     if (hydrated === true) {
       record.recorded = Date.now();
     }
 
-    try {
-      const result = await this.getValidator(record.type).safeParseAsync(record.data);
+    const validator = this.getValidator(record.type);
+    if (validator !== undefined) {
+      const result = await validator.safeParseAsync(record.data);
       if (result.success === false) {
-        return new EventDataValidationFailure(result.error.flatten().fieldErrors);
+        throw new EventDataValidationFailure(result.error.flatten().fieldErrors);
       }
+    }
+
+    try {
       await this.validator.validate(record);
     } catch (error) {
-      return new EventValidationFailure(error.message);
+      throw new EventValidationFailure(error.message);
     }
 
     try {
       await this.events.insert(record);
     } catch (error) {
-      return new EventInsertionFailure(error.message);
+      throw new EventInsertionFailure(error.message);
     }
 
     try {
       await this.contextor.push(record);
     } catch (error) {
-      return new EventContextFailure(error.message);
+      throw new EventContextFailure(error.message);
     }
 
     try {
       await this.projector.project(record, { hydrated, outdated: status.outdated });
     } catch (error) {
-      return new EventProjectionFailure(error.message);
+      throw new EventProjectionFailure(error.message);
     }
 
-    return new EventPushSuccess(record);
+    return record.stream;
   }
 
   /*

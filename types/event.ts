@@ -2,22 +2,6 @@ import type { Empty } from "./common.ts";
 
 /*
  |--------------------------------------------------------------------------------
- | Factory
- |--------------------------------------------------------------------------------
- */
-
-/**
- * Event factory that defines the required input based on the event it is
- * representing.
- */
-export type EventFactory<TEvent extends Event> = TEvent["meta"] extends Empty
-  ? TEvent["data"] extends Empty ? () => TEvent
-  : (data: TEvent["data"]) => TEvent
-  : TEvent["data"] extends Empty ? (data: Empty, meta: TEvent["meta"]) => TEvent
-  : (data: TEvent["data"], meta: TEvent["meta"]) => TEvent;
-
-/*
- |--------------------------------------------------------------------------------
  | Record
  |--------------------------------------------------------------------------------
  */

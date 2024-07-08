@@ -8,14 +8,14 @@ import { jsonSchema } from "./utilities/json-schema.ts";
  */
 export function getEventType(event: Config["event"]) {
   let data = "Empty";
-  if (event.data !== undefined) {
+  if (event.data !== undefined && Object.keys(event.data).length > 0) {
     data = jsonSchema.compile({
       type: "object",
       properties: event.data,
     });
   }
   let meta = "Empty";
-  if (event.meta !== undefined) {
+  if (event.meta !== undefined && Object.keys(event.meta).length > 0) {
     meta = jsonSchema.compile({
       type: "object",
       properties: event.meta,

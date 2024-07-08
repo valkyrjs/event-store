@@ -16,11 +16,6 @@
       "email": {
         "type": "string"
       }
-    },
-    "meta": {
-      "auditor": {
-        "type": "string"
-      }
     }
   }
 }
