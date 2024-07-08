@@ -24,6 +24,12 @@ export async function prepareMigrationFiles(meta: ImportMeta, output: string) {
   }
 }
 
+/*
+ |--------------------------------------------------------------------------------
+ | Helpers
+ |--------------------------------------------------------------------------------
+ */
+
 function isRemoteUrl(url: string) {
   return url.includes("https://jsr.io/@valkyr/event-store");
 }
