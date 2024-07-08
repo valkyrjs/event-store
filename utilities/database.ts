@@ -1,9 +1,8 @@
 export class Database<TAdapter extends DrizzleAdapter> {
-  #hooks: Hooks<TAdapter>;
+  #hooks: Hooks;
 
-  constructor(readonly instance: TAdapter, hooks: Hooks<TAdapter>) {
+  constructor(readonly instance: TAdapter, hooks: Hooks) {
     this.#hooks = hooks;
-    this.migrate = this.migrate.bind(this);
     this.close = this.close.bind(this);
   }
 
@@ -133,13 +132,6 @@ export class Database<TAdapter extends DrizzleAdapter> {
   }
 
   /**
-   * Run schema migrations on the connected database instance.
-   */
-  async migrate(): Promise<void> {
-    await this.#hooks.onMigrateInstance(this.instance);
-  }
-
-  /**
    * Disconnect the client and remove the instance.
    */
   async close() {
@@ -153,8 +145,7 @@ export class Database<TAdapter extends DrizzleAdapter> {
  |--------------------------------------------------------------------------------
  */
 
-type Hooks<TAdapter extends DrizzleAdapter> = {
-  onMigrateInstance(context: TAdapter): Promise<void>;
+type Hooks = {
   onCloseInstance(): Promise<void>;
 };
 

@@ -55,6 +55,8 @@ import { ContextProvider } from "./contexts/provider.ts";
 import { EventProvider } from "./events/provider.ts";
 import { type EventStoreDB, makeEventStoreDatabase } from "./database.ts";
 
+export { migrate } from "./database.ts";
+
 /*
  |--------------------------------------------------------------------------------
  | Event Store
@@ -101,13 +103,6 @@ export class PGEventStore<TEvent extends Event, TRecord extends EventRecord = Ev
    */
   get db(): EventStoreDB {
     return this.#database.instance;
-  }
-
-  /**
-   * Access the event store database migration method.
-   */
-  get migrate(): () => Promise<void> {
-    return this.#database.migrate;
   }
 
   /*

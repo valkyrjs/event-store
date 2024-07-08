@@ -5,7 +5,7 @@ import { assertEquals } from "std/assert/mod.ts";
 import { beforeEach, describe, it } from "std/testing/bdd.ts";
 
 import { EventDataValidationFailure, EventValidationFailure } from "~libraries/store.ts";
-import { SQLiteEventStore } from "~stores/sqlite/event-store.ts";
+import { migrate, SQLiteEventStore } from "~stores/sqlite/event-store.ts";
 import type { Event } from "~types/event.ts";
 
 /*
@@ -236,8 +236,9 @@ describe("SQLite Event Store", () => {
  */
 
 async function getEventStore() {
+  const database = new Database(":memory:");
   const store = new SQLiteEventStore<UserEvent>({
-    database: new Database(":memory:"),
+    database,
     events: new Set(
       [
         "UserCreated",
@@ -256,7 +257,7 @@ async function getEventStore() {
       ["UserGivenNameSet", z.object({ given: z.string() }).strict()],
     ]),
   });
-  await store.migrate();
+  await migrate(database);
   return store;
 }
 

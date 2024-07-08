@@ -6,7 +6,7 @@ import { assertEquals } from "std/assert/mod.ts";
 import { afterAll, afterEach, beforeAll, describe, it } from "std/testing/bdd.ts";
 
 import { EventDataValidationFailure, EventValidationFailure } from "~libraries/store.ts";
-import { PGEventStore } from "~stores/pg/event-store.ts";
+import { migrate, PGEventStore } from "~stores/pg/event-store.ts";
 import type { Event } from "~types/event.ts";
 
 const DB_NAME = "sandbox";
@@ -23,7 +23,7 @@ const store = await getEventStore(container.url(DB_NAME));
 describe("Postgres Event Store", () => {
   beforeAll(async () => {
     await container.create(DB_NAME);
-    await store.migrate();
+    await migrate(container.client(DB_NAME));
   });
 
   afterEach(async () => {
