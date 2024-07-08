@@ -1,16 +1,13 @@
-import { resolve } from "node:path";
-
 import { type BunSQLiteDatabase, drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate as runMigration } from "drizzle-orm/bun-sqlite/migrator";
 import type { Database as SQLiteDatabase } from "sqlite";
 
 import { Database } from "~utilities/database.ts";
-import { getDirname } from "~utilities/dirname.ts";
+import { prepareMigrationFiles } from "../../utilities/migrations.ts";
 
 import { contexts } from "./contexts/schema.ts";
 import { events } from "./events/schema.ts";
 
-const dirname = getDirname(import.meta);
 const schema = { contexts, events };
 
 /**
@@ -30,10 +27,12 @@ export function makeEventStoreDatabase(connection: SQLiteDatabase) {
  * Takes a `npm:sqlite` database instance and migrates event store structure.
  *
  * @param connection - Connection to migrate against.
+ * @param output     - Folder to place the migration files in.
  */
-export async function migrate(connection: SQLiteDatabase): Promise<void> {
+export async function migrate(connection: SQLiteDatabase, output: string): Promise<void> {
+  await prepareMigrationFiles(import.meta, output);
   await runMigration(drizzle(connection, { schema }), {
-    migrationsFolder: resolve(dirname, "migrations"),
+    migrationsFolder: output,
     migrationsTable: "event_store_migrations",
   });
 }

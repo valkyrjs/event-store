@@ -1,3 +1,5 @@
+import { resolve } from "node:path";
+
 import { PostgresTestContainer } from "@valkyr/testcontainers/postgres";
 import postgres from "postgres";
 import z from "zod";
@@ -10,6 +12,7 @@ import { migrate, PGEventStore } from "~stores/pg/event-store.ts";
 import type { Event } from "~types/event.ts";
 
 const DB_NAME = "sandbox";
+const DB_MIGRATE = resolve(import.meta.dirname!, "pg-migrate");
 
 const container = await PostgresTestContainer.start("postgres:14");
 const store = await getEventStore(container.url(DB_NAME));
@@ -23,7 +26,7 @@ const store = await getEventStore(container.url(DB_NAME));
 describe("Postgres Event Store", () => {
   beforeAll(async () => {
     await container.create(DB_NAME);
-    await migrate(container.client(DB_NAME));
+    await migrate(container.client(DB_NAME), DB_MIGRATE);
   });
 
   afterEach(async () => {
@@ -31,6 +34,7 @@ describe("Postgres Event Store", () => {
   });
 
   afterAll(async () => {
+    await Deno.remove(DB_MIGRATE, { recursive: true });
     await container.stop();
   });
 

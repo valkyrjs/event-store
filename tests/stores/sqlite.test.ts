@@ -1,12 +1,16 @@
+import { resolve } from "node:path";
+
 import { Database } from "sqlite";
 import { z } from "zod";
 
 import { assertEquals } from "std/assert/mod.ts";
-import { beforeEach, describe, it } from "std/testing/bdd.ts";
+import { afterAll, beforeEach, describe, it } from "std/testing/bdd.ts";
 
 import { EventDataValidationFailure, EventValidationFailure } from "~libraries/store.ts";
 import { migrate, SQLiteEventStore } from "~stores/sqlite/event-store.ts";
 import type { Event } from "~types/event.ts";
+
+const DB_MIGRATE = resolve(import.meta.dirname!, "sqlite-migrate");
 
 /*
  |--------------------------------------------------------------------------------
@@ -19,6 +23,10 @@ describe("SQLite Event Store", () => {
 
   beforeEach(async () => {
     store = await getEventStore();
+  });
+
+  afterAll(async () => {
+    await Deno.remove(DB_MIGRATE, { recursive: true });
   });
 
   it("should successfully handle a UserCreated event", async () => {
@@ -257,7 +265,7 @@ async function getEventStore() {
       ["UserGivenNameSet", z.object({ given: z.string() }).strict()],
     ]),
   });
-  await migrate(database);
+  await migrate(database, DB_MIGRATE);
   return store;
 }
 

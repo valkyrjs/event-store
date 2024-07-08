@@ -5,8 +5,8 @@ import { resolveRefs } from "json-refs";
 import { jsonSchemaToZod } from "json-schema-to-zod";
 import { format } from "prettier";
 
+import { ensureDir } from "../utilities/fs.ts";
 import { assertConfig, type Config } from "./asserts/events.ts";
-import { ensureOutputDirectory } from "./utilities/files.ts";
 import { jsonSchema } from "./utilities/json-schema.ts";
 import { getEventType, getImports } from "./types.ts";
 
@@ -36,7 +36,7 @@ export async function printEvents({ paths, output, modules = [] }: Options) {
   const { names, types, validators } = await getEventStoreContainer(paths, [
     ...modules.map((module) => module.events).flat(),
   ]);
-  await ensureOutputDirectory(output);
+  await ensureDir(output);
   await writeFile(
     output,
     await format(

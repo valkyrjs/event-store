@@ -1,22 +1,17 @@
-import { resolve } from "node:path";
-
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { migrate as runMigration } from "drizzle-orm/postgres-js/migrator";
 import type { Sql } from "postgres";
 
 import { Database } from "~utilities/database.ts";
-import { getDirname } from "~utilities/dirname.ts";
+import { prepareMigrationFiles } from "../../utilities/migrations.ts";
 
 import { contexts } from "./contexts/schema.ts";
 import { events } from "./events/schema.ts";
 
-console.log(import.meta);
-
-const dirname = getDirname(import.meta);
 const schema = { contexts, events };
 
 /**
- * Takes a `npm:sqlite` database instance and returns a event store database.
+ * Takes a `npm:postgres` database instance and returns a event store database.
  *
  * @param connection - SQLite connection to use for the database.
  */
@@ -29,14 +24,15 @@ export function makeEventStoreDatabase(connection: Sql) {
 }
 
 /**
- * Takes a `npm:sqlite` database instance and migrates event store structure.
+ * Takes a `npm:postgres` database instance and migrates event store structure.
  *
  * @param connection - Connection to migrate against.
+ * @param output     - Folder to place the migration files in.
  */
-export async function migrate(connection: Sql): Promise<void> {
-  console.log(resolve(dirname, "migrations"));
+export async function migrate(connection: Sql, output: string): Promise<void> {
+  await prepareMigrationFiles(import.meta, output);
   await runMigration(drizzle(connection, { schema }), {
-    migrationsFolder: resolve(dirname, "migrations"),
+    migrationsFolder: output,
     migrationsTable: "event_store_migrations",
   });
 }
