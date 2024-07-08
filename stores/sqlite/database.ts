@@ -9,6 +9,7 @@ import { Database } from "~utilities/database.ts";
 import { contexts } from "./contexts/schema.ts";
 import { events } from "./events/schema.ts";
 
+const dirname = import.meta.dirname ?? __dirname;
 const schema = { contexts, events };
 
 /**
@@ -31,7 +32,7 @@ export function makeEventStoreDatabase(connection: SQLiteDatabase) {
  */
 export async function migrate(connection: SQLiteDatabase): Promise<void> {
   await runMigration(drizzle(connection, { schema }), {
-    migrationsFolder: resolve(import.meta.dirname ?? "./", "migrations"),
+    migrationsFolder: resolve(dirname, "migrations"),
     migrationsTable: "event_store_migrations",
   });
 }
