@@ -5,11 +5,12 @@ import { migrate as runMigration } from "drizzle-orm/postgres-js/migrator";
 import type { Sql } from "postgres";
 
 import { Database } from "~utilities/database.ts";
+import { getDirname } from "~utilities/dirname.ts";
 
 import { contexts } from "./contexts/schema.ts";
 import { events } from "./events/schema.ts";
 
-const dirname = import.meta.dirname ?? __dirname;
+const dirname = getDirname(import.meta);
 const schema = { contexts, events };
 
 /**

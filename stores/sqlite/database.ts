@@ -5,11 +5,12 @@ import { migrate as runMigration } from "drizzle-orm/bun-sqlite/migrator";
 import type { Database as SQLiteDatabase } from "sqlite";
 
 import { Database } from "~utilities/database.ts";
+import { getDirname } from "~utilities/dirname.ts";
 
 import { contexts } from "./contexts/schema.ts";
 import { events } from "./events/schema.ts";
 
-const dirname = import.meta.dirname ?? __dirname;
+const dirname = getDirname(import.meta);
 const schema = { contexts, events };
 
 /**
