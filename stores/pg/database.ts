@@ -10,6 +10,8 @@ import { getDirname } from "~utilities/dirname.ts";
 import { contexts } from "./contexts/schema.ts";
 import { events } from "./events/schema.ts";
 
+console.log(import.meta);
+
 const dirname = getDirname(import.meta);
 const schema = { contexts, events };
 
