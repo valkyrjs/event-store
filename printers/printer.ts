@@ -42,6 +42,7 @@ export async function printEvents({ paths, output, modules = [] }: Options) {
     await format(
       `
         /* eslint-disable @typescript-eslint/no-unused-vars */
+        // deno-fmt-ignore-file
         // This is an auto generated file. Do not modify this file!
         
         import { type AnyZodObject, type Empty, type Event, z } from "@valkyr/event-store";
