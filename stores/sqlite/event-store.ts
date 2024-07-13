@@ -47,7 +47,7 @@ import {
 import type { Empty, Unknown } from "~types/common.ts";
 import type { Event, EventRecord, EventStatus, EventToRecord } from "~types/event.ts";
 import type { ReduceHandler, Reducer } from "~types/reducer.ts";
-import type { EventReadOptions, Pagination } from "~types/event-store.ts";
+import type { EventHooks, EventReadOptions, Pagination } from "~types/event-store.ts";
 import type { Database } from "~utilities/database.ts";
 
 import { ContextProvider } from "./contexts/provider.ts";
@@ -157,15 +157,16 @@ export class SQLiteEventStore<TEvent extends Event, TRecord extends EventRecord 
    * @remarks Push is meant to take events from the local services and insert them as new event
    * records as non hydrated events.
    *
-   * @param stream - Stream the event belongs to.
-   * @param event  - Event data to record.
+   * @param event - Event data to record.
+   * @param hooks - Event hooks to handle post insert events.
    */
   async add<TEventType extends Event["type"]>(
     event: ExcludeEmptyFields<Extract<TEvent, { type: TEventType }>> & {
       stream?: string;
     },
+    hooks: Partial<EventHooks> = {},
   ): Promise<string> {
-    return this.push(createEventRecord(event as any) as TRecord, false);
+    return this.push(createEventRecord(event as any) as TRecord, hooks, false);
   }
 
   /**
@@ -179,9 +180,10 @@ export class SQLiteEventStore<TEvent extends Event, TRecord extends EventRecord 
    * as its being recorded locally but is not the originator of the event creation.
    *
    * @param record   - EventRecord to insert.
+   * @param hooks    - Event hooks to handle post insert events.
    * @param hydrated - Whether the event is hydrated or not. (Optional)
    */
-  async push(record: TRecord, hydrated = true): Promise<string> {
+  async push(record: TRecord, hooks: Partial<EventHooks> = {}, hydrated = true): Promise<string> {
     if (this.#events.has(record.type) === false) {
       throw new Error(`Event '${record.type}' is not registered with the event store!`);
     }
@@ -218,13 +220,13 @@ export class SQLiteEventStore<TEvent extends Event, TRecord extends EventRecord 
     try {
       await this.contextor.push(record);
     } catch (error) {
-      throw new EventContextFailure(error.message);
+      hooks?.afterContextError?.(new EventContextFailure(error.message));
     }
 
     try {
       await this.projector.project(record, { hydrated, outdated: status.outdated });
     } catch (error) {
-      throw new EventProjectionFailure(error.message);
+      hooks?.afterProjectionError?.(new EventProjectionFailure(error.message));
     }
 
     return record.stream;

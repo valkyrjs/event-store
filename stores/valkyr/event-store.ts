@@ -39,6 +39,7 @@ import { makeReducer } from "~libraries/reducer.ts";
 import { EventInsertionFailure, EventProjectionFailure, EventValidationFailure } from "../../libraries/errors.ts";
 import type { Empty, Unknown } from "~types/common.ts";
 import type { Event, EventRecord, EventStatus, EventToRecord } from "~types/event.ts";
+import type { EventHooks } from "~types/event-store.ts";
 import type { ReduceHandler, Reducer } from "~types/reducer.ts";
 
 import { type Adapter, type Collections, getEventStoreDatabase } from "./database.ts";
@@ -53,18 +54,18 @@ import { type Adapter, type Collections, getEventStoreDatabase } from "./databas
  * Provides a solution to easily validate, generate, and project events to a
  * valkyr database.
  */
-export class ValkyrEventStore<E extends Event, Record extends EventRecord = EventToRecord<E>> {
-  readonly #config: Config<E, Record>;
+export class ValkyrEventStore<TEvent extends Event, TRecord extends EventRecord = EventToRecord<TEvent>> {
+  readonly #config: Config<TEvent, TRecord>;
   readonly #database: IndexedDatabase<Collections> | MemoryDatabase<Collections>;
 
-  readonly validator: Validator<Record>;
-  readonly projector: Projector<Record>;
+  readonly validator: Validator<TRecord>;
+  readonly projector: Projector<TRecord>;
 
-  constructor(config: Config<E, Record>) {
+  constructor(config: Config<TEvent, TRecord>) {
     this.#config = config;
 
-    this.validator = new Validator<Record>();
-    this.projector = new Projector<Record>();
+    this.validator = new Validator<TRecord>();
+    this.projector = new Projector<TRecord>();
 
     this.#database = getEventStoreDatabase(config.database);
   }
@@ -90,8 +91,8 @@ export class ValkyrEventStore<E extends Event, Record extends EventRecord = Even
    |--------------------------------------------------------------------------------
    */
 
-  reducer<State extends Unknown>(reducer: Reducer<State, Record>, state: State): ReduceHandler<State, Record> {
-    return makeReducer<State, Record>(reducer, state);
+  reducer<TState extends Unknown>(reducer: Reducer<TState, TRecord>, state: TState): ReduceHandler<TState, TRecord> {
+    return makeReducer<TState, TRecord>(reducer, state);
   }
 
   /*
@@ -103,35 +104,36 @@ export class ValkyrEventStore<E extends Event, Record extends EventRecord = Even
   /**
    * Push a new event onto the local event store database.
    *
-   * @remarks Push is meant to take events from the local services and insert them
-   * as new event records as non hydrated events.
+   * @remarks Push is meant to take events from the local services and insert them as new event
+   * records as non hydrated events.
    *
-   * @param stream - Stream the event belongs to.
-   * @param event  - Event data to record.
+   * @param event - Event data to record.
+   * @param hooks - Event hooks to handle post insert events.
    */
-  async add<T extends Event["type"]>(
-    event: ExcludeEmptyFields<Extract<E, { type: T }>> & {
+  async add<TEventType extends Event["type"]>(
+    event: ExcludeEmptyFields<Extract<TEvent, { type: TEventType }>> & {
       stream?: string;
     },
+    hooks: Partial<EventHooks> = {},
   ): Promise<string> {
-    return this.push(createEventRecord(event as any) as Record, false);
+    return this.push(createEventRecord(event as any) as TRecord, hooks, false);
   }
 
   /**
    * Insert a new event to the local event store database.
    *
-   * @remarks This method triggers event validation and projection. If validation
-   * fails the event will not be inserted. If the projection fails the projection
-   * itself should be handling the error based on its own business logic.
+   * @remarks This method triggers event validation and projection. If validation fails the event will
+   * not be inserted. If the projection fails the projection itself should be handling the error based
+   * on its own business logic.
    *
-   * @remarks When hydration is true the event will be recorded with a new locally
-   * generated timestamp as its being recorded locally but is not the originator
-   * of the event creation.
+   * @remarks When hydration is true the event will be recorded with a new locally generated timestamp
+   * as its being recorded locally but is not the originator of the event creation.
    *
    * @param record   - EventRecord to insert.
+   * @param hooks    - Event hooks to handle post insert events.
    * @param hydrated - Whether the event is hydrated or not. (Optional)
    */
-  async push(record: Record, hydrated = true): Promise<string> {
+  async push(record: TRecord, hooks: Partial<EventHooks> = {}, hydrated = true): Promise<string> {
     if (this.#config.events.has(record.type) === false) {
       throw new Error(`Event '${record.type}' is not registered with the event store!`);
     }
@@ -160,7 +162,7 @@ export class ValkyrEventStore<E extends Event, Record extends EventRecord = Even
     try {
       await this.projector.project(record, { hydrated, outdated: status.outdated });
     } catch (error) {
-      throw new EventProjectionFailure(error.message);
+      hooks?.afterProjectionError?.(new EventProjectionFailure(error.message));
     }
 
     if (hydrated === false) {
@@ -193,7 +195,7 @@ export class ValkyrEventStore<E extends Event, Record extends EventRecord = Even
    * hosted stream. If another event of the same type in the streamis newer than
    * the provided event, the provided event is considered outdated.
    */
-  async getEventStatus(record: Record): Promise<EventStatus> {
+  async getEventStatus(record: TRecord): Promise<EventStatus> {
     const result = await this.events.findOne({ id: record.id });
     if (result !== undefined) {
       return { exists: true, outdated: true };
@@ -207,7 +209,7 @@ export class ValkyrEventStore<E extends Event, Record extends EventRecord = Even
    *
    * @param record - Event record to get outdated state for.
    */
-  async getOutdatedState({ stream, type, created }: Record): Promise<boolean> {
+  async getOutdatedState({ stream, type, created }: TRecord): Promise<boolean> {
     const count = await this.events.count({
       stream,
       type,
@@ -223,14 +225,14 @@ export class ValkyrEventStore<E extends Event, Record extends EventRecord = Even
    *
    * @param options - Read options. (Optional)
    */
-  async getEvents({ cursor, direction }: EventReadOptions = {}): Promise<Record[]> {
+  async getEvents({ cursor, direction }: EventReadOptions = {}): Promise<TRecord[]> {
     const filter: any = {};
     if (cursor !== undefined) {
       filter.created = {
         [direction === 1 ? "$gt" : "$lt"]: cursor,
       };
     }
-    return (await this.events.find(filter, { sort: { created: 1 } })) as Record[];
+    return (await this.events.find(filter, { sort: { created: 1 } })) as TRecord[];
   }
 
   /**
@@ -262,7 +264,7 @@ export class ValkyrEventStore<E extends Event, Record extends EventRecord = Even
    * @param stream  - Stream to retrieve events for.
    * @param options - Stream logic options. _(Optional)_
    */
-  async getEventsByStream(stream: string, { cursor, direction }: EventReadOptions = {}): Promise<Record[]> {
+  async getEventsByStream(stream: string, { cursor, direction }: EventReadOptions = {}): Promise<TRecord[]> {
     const filter: any = {};
     if (stream !== undefined) {
       filter.stream = stream;
@@ -272,7 +274,7 @@ export class ValkyrEventStore<E extends Event, Record extends EventRecord = Even
         [direction === 1 ? "$gt" : "$lt"]: cursor,
       };
     }
-    return (await this.events.find(filter, { sort: { created: 1 } })) as Record[];
+    return (await this.events.find(filter, { sort: { created: 1 } })) as TRecord[];
   }
 
   /*
@@ -287,7 +289,7 @@ export class ValkyrEventStore<E extends Event, Record extends EventRecord = Even
    *
    * @param type - Event to get validator for.
    */
-  getValidator(type: Record["type"]): AnyZodObject {
+  getValidator(type: TRecord["type"]): AnyZodObject {
     return this.#config.validators.get(type)!;
   }
 }

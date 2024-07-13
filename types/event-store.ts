@@ -1,3 +1,10 @@
+import type { EventContextFailure, EventProjectionFailure } from "~libraries/errors.ts";
+
+export type EventHooks = {
+  afterContextError(error: EventContextFailure): Promise<void> | void;
+  afterProjectionError(error: EventProjectionFailure): Promise<void> | void;
+};
+
 export type EventReadOptions = {
   /**
    * Fetch events from a specific point in time. The direction of which
