@@ -22,9 +22,11 @@ export class EventProjectionFailure extends Error {
   readonly step = "project";
 }
 
-export type EventError =
+export type PreEventInsertError =
   | EventDataValidationFailure
   | EventValidationFailure
-  | EventInsertionFailure
+  | EventInsertionFailure;
+
+export type PostEventInsertError =
   | EventContextFailure
   | EventProjectionFailure;

@@ -36,7 +36,7 @@ export async function pushEventRecord(
     if (result.success === false) {
       const eventError = new EventDataValidationFailure(result.error.flatten().fieldErrors);
       if (store.hooks?.beforeEventError !== undefined) {
-        throw await store.hooks?.beforeEventError(record, eventError);
+        throw await store.hooks?.beforeEventError(eventError, record);
       }
       throw eventError;
     }
@@ -47,7 +47,7 @@ export async function pushEventRecord(
   } catch (error) {
     const eventError = new EventValidationFailure(error.message);
     if (store.hooks?.beforeEventError !== undefined) {
-      throw await store.hooks?.beforeEventError(record, eventError);
+      throw await store.hooks?.beforeEventError(eventError, record);
     }
     throw eventError;
   }
@@ -57,7 +57,7 @@ export async function pushEventRecord(
   } catch (error) {
     const eventError = new EventInsertionFailure(error.message);
     if (store.hooks?.beforeEventError !== undefined) {
-      throw await store.hooks?.beforeEventError(record, eventError);
+      throw await store.hooks?.beforeEventError(eventError, record);
     }
     throw eventError;
   }
@@ -65,13 +65,13 @@ export async function pushEventRecord(
   try {
     await store.contextor.push(record);
   } catch (error) {
-    store.hooks?.afterEventError?.(record, new EventContextFailure(error.message));
+    store.hooks?.afterEventError?.(new EventContextFailure(error.message), record);
   }
 
   try {
     await store.projector.project(record, { hydrated, outdated: status.outdated });
   } catch (error) {
-    store.hooks?.afterEventError?.(record, new EventProjectionFailure(error.message));
+    store.hooks?.afterEventError?.(new EventProjectionFailure(error.message), record);
   }
 
   return record.stream;

@@ -1,4 +1,4 @@
-import type { EventError } from "~libraries/errors.ts";
+import type { PostEventInsertError, PreEventInsertError } from "~libraries/errors.ts";
 
 import type { Unknown } from "./common.ts";
 import type { Event, EventRecord, EventStatus } from "./event.ts";
@@ -149,8 +149,56 @@ export type EventStore<TEvent extends Event, TRecord extends EventRecord> = {
  */
 
 export type EventHooks<TRecord extends EventRecord> = Partial<{
-  beforeEventError(record: TRecord, error: EventError): Promise<Error>;
-  afterEventError(record: TRecord, error: EventError): Promise<void> | void;
+  /**
+   * Before an error is thrown, this hook allows for customizing the error that
+   * is thrown. This is useful for when you want to throw a different error that
+   * more complies with your project setup.
+   *
+   * @param error  - Event error that got triggered.
+   * @param record - Record that was passed to the event store.
+   *
+   * @example
+   * ```ts
+   * const eventStore = new EventStore({
+   *   ...config,
+   *   hooks: {
+   *     beforeEventError(error) {
+   *       if (error.step === "validation") {
+   *         return new ServerError(error.message);
+   *       }
+   *       return error;
+   *     }
+   *   }
+   * })
+   * ```
+   */
+  beforeEventError(error: PreEventInsertError, record: TRecord): Promise<Error | unknown>;
+
+  /**
+   * After an error is thrown, this hook allows for reacting to a failure that
+   * occured during event record insertion. This is useful for reporting issues,
+   * especially in the events that failed to project or update contexts.
+   *
+   * @param error  - Event error that got triggered.
+   * @param record - Record that was passed to the event store.
+   *
+   * @example
+   * ```ts
+   * const eventStore = new EventStore({
+   *   ...config,
+   *   hooks: {
+   *     async afterEventError(error, record) {
+   *       if (error.step === "project") {
+   *         await report.projectionFailed(
+   *          `Failed to project record '${record.stream}', manual recovery required!`
+   *         );
+   *       }
+   *     }
+   *   }
+   * })
+   * ```
+   */
+  afterEventError(error: PostEventInsertError, record: TRecord): Promise<void> | void;
 }>;
 
 /*

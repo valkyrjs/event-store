@@ -1,6 +1,6 @@
 import type { EventRecord } from "./event.ts";
 
-export type ContextHandler<Record extends EventRecord> = (record: Record) => Omit<Context, "stream">[];
+export type ContextHandler<TRecord extends EventRecord> = (record: TRecord) => Omit<Context, "stream">[];
 
 export type Context = {
   key: string;

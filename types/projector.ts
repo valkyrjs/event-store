@@ -1,21 +1,21 @@
 import type { EventRecord } from "./event.ts";
 
-export type ProjectorListeners<R extends EventRecord = EventRecord> = Record<
+export type ProjectorListeners<TRecord extends EventRecord = EventRecord> = Record<
   string,
-  Set<ProjectorListenerFn<R>> | undefined
+  Set<ProjectorListenerFn<TRecord>> | undefined
 >;
 
-export type ProjectorMessage<Record extends EventRecord = EventRecord> = {
-  record: Record;
+export type ProjectorMessage<TRecord extends EventRecord = EventRecord> = {
+  record: TRecord;
   state: ProjectionState;
 };
 
-export type ProjectorListenerFn<Record extends EventRecord = EventRecord> = (
-  record: Record,
+export type ProjectorListenerFn<TRecord extends EventRecord = EventRecord> = (
+  record: TRecord,
   state: ProjectionState,
 ) => void;
 
-export type ProjectionHandler<Record extends EventRecord = EventRecord> = (record: Record) => Promise<void>;
+export type ProjectionHandler<TRecord extends EventRecord = EventRecord> = (record: TRecord) => Promise<void>;
 
 export type ProjectionState = {
   /**

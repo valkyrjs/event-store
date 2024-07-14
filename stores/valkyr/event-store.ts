@@ -138,7 +138,7 @@ export class ValkyrEventStore<TEvent extends Event, TRecord extends EventRecord 
     try {
       await this.projector.project(record, { hydrated, outdated: status.outdated });
     } catch (error) {
-      this.#config.hooks?.afterEventError?.(record, new EventProjectionFailure(error.message));
+      this.#config.hooks?.afterEventError?.(new EventProjectionFailure(error.message), record);
     }
 
     if (hydrated === false) {
