@@ -1,9 +1,9 @@
 {
   "deno.enable": true,
   "deno.lint": true,
-  "eslint.nodePath": "./.lint/node_modules",
+  "eslint.nodePath": "./.eslint/node_modules",
   "eslint.options": {
-    "overrideConfigFile": "./.lint/eslint.config.mjs"
+    "overrideConfigFile": "./.eslint/eslint.config.mjs"
   },
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {

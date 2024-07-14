@@ -21,3 +21,10 @@ export class EventContextFailure extends Error {
 export class EventProjectionFailure extends Error {
   readonly step = "project";
 }
+
+export type EventError =
+  | EventDataValidationFailure
+  | EventValidationFailure
+  | EventInsertionFailure
+  | EventContextFailure
+  | EventProjectionFailure;
