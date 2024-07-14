@@ -32,11 +32,17 @@
 import type { Sql as PGDatabase } from "postgres";
 import type { AnyZodObject } from "zod";
 
-import { Validator } from "~libraries/validator.ts";
-import { Projector } from "~libraries/projector.ts";
-import { createEventRecord } from "~libraries/event.ts";
-import { makeReducer } from "~libraries/reducer.ts";
 import { Contextor } from "~libraries/contextor.ts";
+import { createEventRecord } from "~libraries/event.ts";
+import { Projector } from "~libraries/projector.ts";
+import { makeReducer } from "~libraries/reducer.ts";
+import { Validator } from "~libraries/validator.ts";
+import type { Empty, Unknown } from "~types/common.ts";
+import type { Event, EventRecord, EventStatus, EventToRecord } from "~types/event.ts";
+import type { EventHooks, EventReadOptions, Pagination } from "~types/event-store.ts";
+import type { ReduceHandler, Reducer } from "~types/reducer.ts";
+import type { Database } from "~utilities/database.ts";
+
 import {
   EventContextFailure,
   EventDataValidationFailure,
@@ -44,15 +50,9 @@ import {
   EventProjectionFailure,
   EventValidationFailure,
 } from "../../libraries/errors.ts";
-import type { Empty, Unknown } from "~types/common.ts";
-import type { Event, EventRecord, EventStatus, EventToRecord } from "~types/event.ts";
-import type { ReduceHandler, Reducer } from "~types/reducer.ts";
-import type { EventHooks, EventReadOptions, Pagination } from "~types/event-store.ts";
-import type { Database } from "~utilities/database.ts";
-
 import { ContextProvider } from "./contexts/provider.ts";
-import { EventProvider } from "./events/provider.ts";
 import { type EventStoreDB, makeEventStoreDatabase } from "./database.ts";
+import { EventProvider } from "./events/provider.ts";
 
 export { migrate } from "./database.ts";
 

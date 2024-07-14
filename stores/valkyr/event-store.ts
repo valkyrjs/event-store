@@ -32,16 +32,16 @@
 import type { Collection, IndexedDatabase, MemoryDatabase } from "@valkyr/db";
 import type { AnyZodObject } from "zod";
 
-import { Validator } from "~libraries/validator.ts";
-import { Projector } from "~libraries/projector.ts";
 import { createEventRecord } from "~libraries/event.ts";
+import { Projector } from "~libraries/projector.ts";
 import { makeReducer } from "~libraries/reducer.ts";
-import { EventInsertionFailure, EventProjectionFailure, EventValidationFailure } from "../../libraries/errors.ts";
+import { Validator } from "~libraries/validator.ts";
 import type { Empty, Unknown } from "~types/common.ts";
 import type { Event, EventRecord, EventStatus, EventToRecord } from "~types/event.ts";
 import type { EventHooks } from "~types/event-store.ts";
 import type { ReduceHandler, Reducer } from "~types/reducer.ts";
 
+import { EventInsertionFailure, EventProjectionFailure, EventValidationFailure } from "../../libraries/errors.ts";
 import { type Adapter, type Collections, getEventStoreDatabase } from "./database.ts";
 
 /*

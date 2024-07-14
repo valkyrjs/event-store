@@ -3,8 +3,8 @@ import { migrate as runMigration } from "drizzle-orm/bun-sqlite/migrator";
 import type { Database as SQLiteDatabase } from "sqlite";
 
 import { Database } from "~utilities/database.ts";
-import { prepareMigrationFiles } from "../../utilities/migrations.ts";
 
+import { prepareMigrationFiles } from "../../utilities/migrations.ts";
 import { contexts } from "./contexts/schema.ts";
 import { events } from "./events/schema.ts";
 

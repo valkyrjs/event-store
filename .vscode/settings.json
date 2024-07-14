@@ -1,7 +1,11 @@
 {
   "deno.enable": true,
-  "deno.lint": true,
+  "deno.lint": false,
   "editor.formatOnSave": true,
+  "eslint.nodePath": "./.lint/node_modules",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
   "[typescript]": { 
     "editor.defaultFormatter": "denoland.vscode-deno" 
   },

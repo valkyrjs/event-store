@@ -1,14 +1,14 @@
 import { resolve } from "node:path";
 
 import { Database } from "sqlite";
-import { z } from "zod";
-
 import { assertEquals, assertRejects } from "std/assert/mod.ts";
 import { afterAll, beforeEach, describe, it } from "std/testing/bdd.ts";
+import { z } from "zod";
 
-import { EventDataValidationFailure, EventValidationFailure } from "../../libraries/errors.ts";
 import { migrate, SQLiteEventStore } from "~stores/sqlite/event-store.ts";
 import type { Event } from "~types/event.ts";
+
+import { EventDataValidationFailure, EventValidationFailure } from "../../libraries/errors.ts";
 
 const DB_MIGRATE = resolve(import.meta.dirname!, "sqlite-migrate");
 

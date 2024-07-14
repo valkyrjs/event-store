@@ -2,10 +2,9 @@ import { resolve } from "node:path";
 
 import { PostgresTestContainer } from "@valkyr/testcontainers/postgres";
 import postgres from "postgres";
-import z from "zod";
-
 import { assertEquals, assertRejects } from "std/assert/mod.ts";
 import { afterAll, afterEach, beforeAll, describe, it } from "std/testing/bdd.ts";
+import z from "zod";
 
 import { EventDataValidationFailure, EventValidationFailure } from "~libraries/errors.ts";
 import { migrate, PGEventStore } from "~stores/pg/event-store.ts";

@@ -3,8 +3,8 @@ import { migrate as runMigration } from "drizzle-orm/postgres-js/migrator";
 import type { Sql } from "postgres";
 
 import { Database } from "~utilities/database.ts";
-import { prepareMigrationFiles } from "../../utilities/migrations.ts";
 
+import { prepareMigrationFiles } from "../../utilities/migrations.ts";
 import { contexts } from "./contexts/schema.ts";
 import { events } from "./events/schema.ts";
 

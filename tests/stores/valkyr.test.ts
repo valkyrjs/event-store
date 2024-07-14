@@ -1,11 +1,11 @@
-import { z } from "zod";
 import { assertEquals, assertRejects } from "std/assert/mod.ts";
 import { beforeEach, describe, it } from "std/testing/bdd.ts";
-
-import { EventValidationFailure } from "../../libraries/errors.ts";
-import type { Event } from "~types/event.ts";
+import { z } from "zod";
 
 import { ValkyrEventStore } from "~stores/valkyr/event-store.ts";
+import type { Event } from "~types/event.ts";
+
+import { EventValidationFailure } from "../../libraries/errors.ts";
 
 /*
  |--------------------------------------------------------------------------------

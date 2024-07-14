@@ -1,7 +1,6 @@
 import type { Subscription } from "~types/common.ts";
 import type { EventRecord } from "~types/event.ts";
 
-import { Queue } from "./queue.ts";
 import type {
   ProjectionFilter,
   ProjectionHandler,
@@ -10,6 +9,7 @@ import type {
   ProjectorListeners,
   ProjectorMessage,
 } from "../types/projector.ts";
+import { Queue } from "./queue.ts";
 
 /*
  |--------------------------------------------------------------------------------

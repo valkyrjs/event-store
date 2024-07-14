@@ -7,8 +7,8 @@ import { format } from "prettier";
 
 import { ensureDir } from "../utilities/fs.ts";
 import { assertConfig, type Config } from "./asserts/events.ts";
-import { jsonSchema } from "./utilities/json-schema.ts";
 import { getEventType, getImports } from "./types.ts";
+import { jsonSchema } from "./utilities/json-schema.ts";
 
 /**
  * Consumes a list of *.json files stored under given paths and generates a new
