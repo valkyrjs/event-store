@@ -43,6 +43,15 @@
   "fmt": {
     "lineWidth": 120
   },
+  "publish": {
+    "exclude": [
+      ".eslint",
+      ".github",
+      ".vscode",
+      ".gitignore",
+      "tests"
+    ]
+  },
   "tasks": {
     "test": "export ENVIRONMENT=testing && deno test --allow-all --unstable-ffi",
     "lint": "deno lint && npx eslint -c .eslint/eslint.config.mjs .",
