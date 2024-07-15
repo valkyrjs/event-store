@@ -43,7 +43,7 @@ async function copyRemoteMigrationFiles(url: string, destination: string): Promi
   const { manifest } = await getModuleMeta(version);
   for (const key in manifest) {
     if (key.includes(`stores/${target}/migrations`) === true && key.endsWith(".ts") === false) {
-      const dest = join(destination, key.replace(`/stores/${target}/migrations`, ""));
+      const dest = join(destination, key.replace(`/stores/${target}/migrations/out`, ""));
       const file = await getRemoteFile(`https://jsr.io/@valkyr/event-store/${version}${key}`);
       await ensureDir(dest);
       await fs.writeFile(dest, file, "utf-8");
