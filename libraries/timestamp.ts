@@ -33,7 +33,7 @@ export class Timestamp {
     return 0;
   }
 
-  toJSON() {
+  toJSON(): TimestampJSON {
     return Object.freeze({
       time: this.encode(),
       logical: this.logical,
@@ -42,3 +42,8 @@ export class Timestamp {
 }
 
 export type TimeLike = string | number;
+
+type TimestampJSON = {
+  readonly time: string;
+  readonly logical: number;
+};
