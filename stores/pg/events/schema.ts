@@ -1,4 +1,4 @@
-import { bigint, index, jsonb, type PgColumn, type PgTableWithColumns, varchar } from "drizzle-orm/pg-core";
+import { index, jsonb, type PgColumn, type PgTableWithColumns, varchar } from "drizzle-orm/pg-core";
 
 import { schema } from "../schema.ts";
 
@@ -8,8 +8,8 @@ export const events: EventTable = schema.table("events", {
   type: varchar("type").notNull(),
   data: jsonb("data").$type<Record<string, any>>().notNull(),
   meta: jsonb("meta").$type<Record<string, any>>().notNull(),
-  recorded: bigint("recorded", { mode: "number" }).notNull(),
-  created: bigint("created", { mode: "number" }).notNull(),
+  recorded: varchar("recorded").notNull(),
+  created: varchar("created").notNull(),
 }, (table) => ({
   streamIdx: index("stream_idx").on(table.stream),
   typeIdx: index("type_idx").on(table.type),
@@ -84,25 +84,25 @@ type EventTable = PgTableWithColumns<{
     recorded: PgColumn<{
       name: "recorded";
       tableName: "events";
-      dataType: "number";
-      columnType: "PgBigInt53";
-      data: number;
-      driverParam: number | string;
+      dataType: "string";
+      columnType: "PgVarchar";
+      data: string;
+      driverParam: string;
       notNull: true;
       hasDefault: false;
-      enumValues: undefined;
+      enumValues: [string, ...string[]];
       baseColumn: never;
     }>;
     created: PgColumn<{
       name: "created";
       tableName: "events";
-      dataType: "number";
-      columnType: "PgBigInt53";
-      data: number;
-      driverParam: number | string;
+      dataType: "string";
+      columnType: "PgVarchar";
+      data: string;
+      driverParam: string;
       notNull: true;
       hasDefault: false;
-      enumValues: undefined;
+      enumValues: [string, ...string[]];
       baseColumn: never;
     }>;
   };

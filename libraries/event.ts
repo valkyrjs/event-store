@@ -1,6 +1,7 @@
 import { nanoid } from "nanoid";
 
 import type { Event, EventRecord } from "../types/event.ts";
+import { getLogicalTimestamp } from "./time.ts";
 
 /**
  * Creates an event record by combining the given event with additional metadata.
@@ -13,7 +14,7 @@ export function createEventRecord<E extends Event>(
     stream?: string;
   },
 ): EventRecord<E> {
-  const timestamp = Date.now();
+  const timestamp = getLogicalTimestamp();
   return {
     id: nanoid(11),
     stream: event.stream ?? nanoid(11),

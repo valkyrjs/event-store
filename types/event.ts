@@ -46,23 +46,24 @@ export type EventRecord<TEvent extends Event = Event> = {
   meta: TEvent["meta"];
 
   /**
-   * An immutable iso timestamp representing the wall time when the event was created.
+   * An immutable hybrid logical clock timestamp representing the wall time when
+   * the event was created.
    *
    * This value is used to identify the date of its creation as well as a sorting
-   * key when performing reduction logic to generate aggregate state for the stream
-   * in which the event belongs.
+   * key when performing reduction logic to generate aggregate state for the
+   * stream in which the event belongs.
    */
-  created: number;
+  created: string;
 
   /**
-   * A mutable iso timestamps representing the wall time when the event was recorded to
-   * the local **event ledger** _(database)_ as opposed to when the event was actually
-   * created.
+   * A mutable hybrid logical clock timestamp representing the wall time when the
+   * event was recorded to the local **event ledger** _(database)_ as opposed to
+   * when the event was actually created.
    *
-   * This value is used when performing event synchronization between two different
-   * event ledgers.
+   * This value is used when performing event synchronization between two
+   * different event ledgers.
    */
-  recorded: number;
+  recorded: string;
 };
 
 /**

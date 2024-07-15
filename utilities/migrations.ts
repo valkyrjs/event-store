@@ -17,7 +17,7 @@ export async function prepareMigrationFiles(meta: ImportMeta, output: string) {
   }
   await ensureDir(output);
   if (meta.dirname !== undefined) {
-    return copyLocalMigrationFiles(join(meta.dirname, "migrations"), output);
+    return copyLocalMigrationFiles(join(meta.dirname, "migrations", "out"), output);
   }
   if (meta.url !== undefined && isRemoteUrl(meta.url)) {
     return copyRemoteMigrationFiles(meta.url, output);

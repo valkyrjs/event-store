@@ -9,8 +9,8 @@ CREATE TABLE `valkyr_events` (
 	`type` text NOT NULL,
 	`data` text NOT NULL,
 	`meta` text NOT NULL,
-	`recorded` integer NOT NULL,
-	`created` integer NOT NULL
+	`recorded` text NOT NULL,
+	`created` text NOT NULL
 );
 --> statement-breakpoint
 CREATE INDEX `key_idx` ON `valkyr_contexts` (`key`);--> statement-breakpoint

@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "7917c054-b647-46c7-9421-96165e3302d6",
+  "id": "493659fb-a045-454a-a0c6-96c126919f3a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "valkyr_contexts": {
@@ -75,14 +75,14 @@
         },
         "recorded": {
           "name": "recorded",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "created": {
           "name": "created",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false

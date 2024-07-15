@@ -12,9 +12,14 @@ export class EventProvider {
    * Insert a new event record to the events table.
    *
    * @param record - Event record to insert.
+   * @param tx     - Transaction to insert the record within. (Optional)
    */
-  async insert(record: EventRecord): Promise<void> {
-    await this.db.insert(schema).values(record);
+  async insert(record: EventRecord, tx?: Parameters<Parameters<EventStoreDB["transaction"]>[0]>[0]): Promise<void> {
+    if (tx !== undefined) {
+      await tx.insert(schema).values(record);
+    } else {
+      await this.db.insert(schema).values(record);
+    }
   }
 
   /**
@@ -74,7 +79,7 @@ type EventReadOptions = {
    * Fetch events from a specific point in time. The direction of which
    * events are fetched is determined by the direction option.
    */
-  cursor?: number;
+  cursor?: string;
 
   /**
    * Fetch events in ascending or descending order.

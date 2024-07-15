@@ -1,5 +1,5 @@
 {
-  "id": "1516e9c4-b2a8-4d46-bde0-ea3c6f28e205",
+  "id": "08e8f65a-79d3-401c-b0d9-c6117176715e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -78,13 +78,13 @@
         },
         "recorded": {
           "name": "recorded",
-          "type": "bigint",
+          "type": "varchar",
           "primaryKey": false,
           "notNull": true
         },
         "created": {
           "name": "created",
-          "type": "bigint",
+          "type": "varchar",
           "primaryKey": false,
           "notNull": true
         }

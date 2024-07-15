@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS "event_store"."events" (
 	"type" varchar NOT NULL,
 	"data" jsonb NOT NULL,
 	"meta" jsonb NOT NULL,
-	"recorded" bigint NOT NULL,
-	"created" bigint NOT NULL
+	"recorded" varchar NOT NULL,
+	"created" varchar NOT NULL
 );
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "key_idx" ON "event_store"."contexts" USING btree ("key");--> statement-breakpoint

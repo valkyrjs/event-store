@@ -1,7 +1,7 @@
-export class Database<TAdapter extends DrizzleAdapter> {
+export class Database<TInstance extends Drizzle> {
   #hooks: Hooks;
 
-  constructor(readonly instance: TAdapter, hooks: Hooks) {
+  constructor(readonly instance: TInstance, hooks: Hooks) {
     this.#hooks = hooks;
     this.close = this.close.bind(this);
   }
@@ -30,7 +30,7 @@ export class Database<TAdapter extends DrizzleAdapter> {
    *   .returning();
    * ```
    */
-  get insert(): TAdapter["insert"] {
+  get insert(): TInstance["insert"] {
     return this.instance.insert.bind(this.instance);
   }
 
@@ -70,7 +70,7 @@ export class Database<TAdapter extends DrizzleAdapter> {
    *   .from(cars);
    * ```
    */
-  get select(): TAdapter["select"] {
+  get select(): TInstance["select"] {
     return this.instance.select.bind(this.instance);
   }
 
@@ -98,7 +98,7 @@ export class Database<TAdapter extends DrizzleAdapter> {
    *   .returning();
    * ```
    */
-  get update(): TAdapter["update"] {
+  get update(): TInstance["update"] {
     return this.instance.update.bind(this.instance);
   }
 
@@ -127,8 +127,15 @@ export class Database<TAdapter extends DrizzleAdapter> {
    *   .returning();
    * ```
    */
-  get delete(): TAdapter["delete"] {
+  get delete(): TInstance["delete"] {
     return this.instance.delete.bind(this.instance);
+  }
+
+  /**
+   * Create a database transaction.
+   */
+  get transaction(): TInstance["transaction"] {
+    return this.instance.transaction.bind(this.instance);
   }
 
   /**
@@ -149,7 +156,8 @@ type Hooks = {
   onCloseInstance(): Promise<void>;
 };
 
-type DrizzleAdapter = {
+type Drizzle = {
+  transaction: any;
   insert: any;
   select: any;
   update: any;

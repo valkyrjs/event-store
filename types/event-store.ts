@@ -12,6 +12,13 @@ import type { ExcludeEmptyFields } from "./utilities.ts";
  */
 
 export type EventStore<TEvent extends Event, TRecord extends EventRecord> = {
+  /**
+   * Check if the event store has an even of given type.
+   *
+   * @param type - Event type to check for.
+   */
+  has(type: TEvent["type"]): boolean;
+
   /*
    |--------------------------------------------------------------------------------
    | Factories
@@ -60,8 +67,8 @@ export type EventStore<TEvent extends Event, TRecord extends EventRecord> = {
   /**
    * Push a new event onto the local event store database.
    *
-   * @remarks Push is meant to take events from the local services and insert them as new event
-   * records as non hydrated events.
+   * Push is meant to take events from the local services and insert them as new
+   * event records as non hydrated events.
    *
    * @param event - Event data to record.
    */
@@ -70,19 +77,41 @@ export type EventStore<TEvent extends Event, TRecord extends EventRecord> = {
   ): Promise<string>;
 
   /**
-   * Insert a new event to the local event store database.
+   * Add multiple new events sequentially onto the local event store database in
+   * a all or nothing pattern.
    *
-   * @remarks This method triggers event validation and projection. If validation fails the event will
-   * not be inserted. If the projection fails the projection itself should be handling the error based
-   * on its own business logic.
+   * @param events - List of events to process.
+   */
+  addSequence<TEventType extends Event["type"]>(
+    event: (ExcludeEmptyFields<Extract<TEvent, { type: TEventType }>> & { stream?: string })[],
+  ): Promise<void>;
+
+  /**
+   * Insert an event record to the local event store database.
    *
-   * @remarks When hydration is true the event will be recorded with a new locally generated timestamp
-   * as its being recorded locally but is not the originator of the event creation.
+   * This method triggers event validation and projection. If validation fails the
+   * event will not be inserted. If the projection fails the projection itself
+   * should be handling the error based on its own business logic.
+   *
+   * When hydration is true the event will be recorded with a new locally generated
+   * timestamp as its being recorded locally but is not the originator of the event
+   * creation.
    *
    * @param record   - EventRecord to insert.
    * @param hydrated - Whether the event is hydrated or not. (Optional)
    */
   push(record: TRecord, hydrated?: boolean): Promise<string>;
+
+  /**
+   * Insert multiple event records sequentially to the local event store database.
+   *
+   * This is a two step process, first step validates and inserts each event in
+   * a commit transaction. Once the commit is successfull the second step projects
+   * the inserted records.
+   *
+   * @param records - List of event records to process.
+   */
+  pushSequence(records: { record: TRecord; hydrated?: boolean }[]): Promise<void>;
 
   /*
    |--------------------------------------------------------------------------------
@@ -212,7 +241,7 @@ export type EventReadOptions = {
    * Fetch events from a specific point in time. The direction of which
    * events are fetched is determined by the direction option.
    */
-  cursor?: number;
+  cursor?: string;
 
   /**
    * Fetch events in ascending or descending order.

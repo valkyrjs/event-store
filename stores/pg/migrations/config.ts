@@ -9,5 +9,5 @@ export default defineConfig({
     resolve(__dirname, "..", "events", "schema.ts"),
     resolve(__dirname, "..", "schema.ts"),
   ],
-  out: resolve(__dirname),
+  out: resolve(__dirname, "out"),
 });

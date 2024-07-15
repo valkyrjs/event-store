@@ -44,7 +44,7 @@ import type { ReduceHandler, Reducer } from "~types/reducer.ts";
 import type { ExcludeEmptyFields } from "~types/utilities.ts";
 import type { Database } from "~utilities/database.ts";
 
-import { pushEventRecord } from "../utilities.ts";
+import { pushEventRecord, pushEventRecordSequence } from "../utilities.ts";
 import { ContextProvider } from "./contexts/provider.ts";
 import { type EventStoreDB, makeEventStoreDatabase } from "./database.ts";
 import { EventProvider } from "./events/provider.ts";
@@ -104,6 +104,10 @@ export class SQLiteEventStore<TEvent extends Event, TRecord extends EventRecord 
     return this.#database.instance;
   }
 
+  has(type: TRecord["type"]): boolean {
+    return this.#events.has(type);
+  }
+
   /*
    |--------------------------------------------------------------------------------
    | Factories
@@ -121,16 +125,33 @@ export class SQLiteEventStore<TEvent extends Event, TRecord extends EventRecord 
    */
 
   async add<TEventType extends Event["type"]>(
-    event: ExcludeEmptyFields<Extract<TEvent, { type: TEventType }>> & { stream?: string },
+    event: ExcludeEmptyFields<Extract<TEvent, { type: TEventType }>> & {
+      stream?: string;
+    },
   ): Promise<string> {
     return this.push(createEventRecord(event as any) as TRecord, false);
   }
 
+  async addSequence<TEventType extends Event["type"]>(
+    events: (ExcludeEmptyFields<Extract<TEvent, { type: TEventType }>> & { stream?: string })[],
+  ): Promise<void> {
+    return this.pushSequence(
+      events.map((event) => ({ record: createEventRecord(event as any) as TRecord, hydrated: false })),
+    );
+  }
+
   async push(record: TRecord, hydrated = true): Promise<string> {
-    if (this.#events.has(record.type) === false) {
-      throw new Error(`Event '${record.type}' is not registered with the event store!`);
-    }
     return pushEventRecord(this as any, record, hydrated);
+  }
+
+  async pushSequence(records: { record: TRecord; hydrated?: boolean }[]): Promise<void> {
+    return pushEventRecordSequence(
+      this as any,
+      records.map<{ record: TRecord; hydrated: boolean }>((record) => {
+        record.hydrated = record.hydrated === undefined ? true : record.hydrated;
+        return record as { record: TRecord; hydrated: boolean };
+      }),
+    );
   }
 
   /*

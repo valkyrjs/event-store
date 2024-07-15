@@ -7,8 +7,9 @@ import type { PGEventStore } from "~stores/pg/event-store.ts";
 import type { SQLiteEventStore } from "~stores/sqlite/event-store.ts";
 import type { EventHooks } from "~types/event-store.ts";
 
-import { CustomServiceError } from "../utilities/errors.ts";
-import type { UserEvent, UserEventRecord } from "./events.ts";
+import { CustomServiceError } from "../mocks/errors.ts";
+import type { UserEvent, UserEventRecord } from "../mocks/events.ts";
+import { getUserReducer } from "../mocks/user-reducer.ts";
 
 export function testEventStoreMethods(
   getEventStore: (
@@ -334,35 +335,111 @@ export function testEventStoreMethods(
     });
   });
 
+  describe(".addSequence", () => {
+    it("should insert 'UserCreated', 'UserGivenNameSet', and 'UserEmailSet' in a sequence of events", async () => {
+      const store = await getEventStore();
+      const stream = nanoid();
+
+      const events = [
+        {
+          stream,
+          type: "UserCreated",
+          data: {
+            name: {
+              given: "Jane",
+              family: "Doe",
+            },
+            email: "jane.doe@fixture.none",
+          },
+        } as const,
+        {
+          stream,
+          type: "UserGivenNameSet",
+          data: {
+            given: "John",
+          },
+        } as const,
+        {
+          stream,
+          type: "UserEmailSet",
+          data: {
+            email: "john@doe.com",
+          },
+          meta: {
+            auditor: "admin",
+          },
+        } as const,
+      ];
+
+      await store.addSequence(events);
+
+      const records = await store.getEventsByStream(stream);
+
+      assertEquals(records.length, 3);
+
+      records.forEach((record, index) => {
+        assertObjectMatch(record, events[index]);
+      });
+
+      const state = await store.getStreamState(stream, getUserReducer(store));
+
+      assertEquals(state?.name.given, "John");
+      assertEquals(state?.email, "john@doe.com");
+    });
+
+    it("should not commit any events when insert fails", async () => {
+      const store = await getEventStore();
+      const stream = nanoid();
+
+      const events = [
+        {
+          stream,
+          type: "UserCreated",
+          data: {
+            name: {
+              given: "Jane",
+              family: "Doe",
+            },
+            email: "jane.doe@fixture.none",
+          },
+        } as const,
+        {
+          stream,
+          type: "UserGivenNameSet",
+          data: {
+            givens: "John",
+          },
+        } as any,
+        {
+          stream,
+          type: "UserEmailSet",
+          data: {
+            email: "john@doe.com",
+          },
+          meta: {
+            auditor: "admin",
+          },
+        } as const,
+      ];
+
+      assertRejects(
+        async () => store.addSequence(events),
+        EventDataValidationFailure,
+        new EventDataValidationFailure({}).message,
+      );
+
+      const records = await store.getEventsByStream(stream);
+
+      assertEquals(records.length, 0);
+    });
+  });
+
   describe(".reducer", () => {
     it("should create a 'user' reducer and reject a 'UserEmailSet' event", async () => {
       const store = await getEventStore();
       const stream = nanoid();
 
-      const userReducer = store.reducer<{
-        name: string;
-        email: string;
-      }>((state, event) => {
-        switch (event.type) {
-          case "UserCreated": {
-            return {
-              ...state,
-              name: `${event.data.name.given} ${event.data.name.family}`,
-              email: event.data.email,
-            };
-          }
-          case "UserEmailSet": {
-            return {
-              ...state,
-              email: event.data.email,
-            };
-          }
-        }
-        return state;
-      }, {
-        name: "",
-        email: "",
-      });
+      const userReducer = getUserReducer(store);
 
       store.validator.on("UserEmailSet", async (record) => {
         const user = await store.getStreamState(stream, userReducer);

@@ -6,8 +6,8 @@ import { afterAll, describe } from "std/testing/bdd.ts";
 import { migrate, SQLiteEventStore } from "~stores/sqlite/event-store.ts";
 import type { EventHooks } from "~types/event-store.ts";
 
-import { testEventStoreMethods } from "./utilities/event-store.bdd.ts";
-import { events, type UserEvent, type UserEventRecord, validators } from "./utilities/events.ts";
+import { testEventStoreMethods } from "./helpers/event-store.bdd.ts";
+import { events, type UserEvent, type UserEventRecord, validators } from "./mocks/events.ts";
 
 const DB_MIGRATE = resolve(import.meta.dirname!, "sqlite-migrate");
 

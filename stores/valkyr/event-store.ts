@@ -35,6 +35,7 @@ import type { AnyZodObject } from "zod";
 import { createEventRecord } from "~libraries/event.ts";
 import { Projector } from "~libraries/projector.ts";
 import { makeReducer } from "~libraries/reducer.ts";
+import { getLogicalTimestamp } from "~libraries/time.ts";
 import { Validator } from "~libraries/validator.ts";
 import type { Unknown } from "~types/common.ts";
 import type { Event, EventRecord, EventStatus, EventToRecord } from "~types/event.ts";
@@ -87,6 +88,10 @@ export class ValkyrEventStore<TEvent extends Event, TRecord extends EventRecord 
     return this.#database.collection("events");
   }
 
+  has(type: TRecord["type"]): boolean {
+    return this.#config.events.has(type);
+  }
+
   /*
    |--------------------------------------------------------------------------------
    | Factories
@@ -109,6 +114,12 @@ export class ValkyrEventStore<TEvent extends Event, TRecord extends EventRecord 
     return this.push(createEventRecord(event as any) as TRecord, false);
   }
 
+  async addSequence<TEventType extends Event["type"]>(
+    _events: (ExcludeEmptyFields<Extract<TEvent, { type: TEventType }>> & { stream?: string })[],
+  ): Promise<void> {
+    throw new Error("Method 'addSequence' not yet supported in @valkyr/db driver");
+  }
+
   async push(record: TRecord, hydrated = true): Promise<string> {
     if (this.#config.events.has(record.type) === false) {
       throw new Error(`Event '${record.type}' is not registered with the event store!`);
@@ -120,7 +131,7 @@ export class ValkyrEventStore<TEvent extends Event, TRecord extends EventRecord 
     }
 
     if (hydrated === true) {
-      record.recorded = Date.now();
+      record.recorded = getLogicalTimestamp();
     }
 
     try {
@@ -146,6 +157,10 @@ export class ValkyrEventStore<TEvent extends Event, TRecord extends EventRecord 
     }
 
     return record.stream;
+  }
+
+  async pushSequence(_records: { record: TRecord; hydrated?: boolean }[]): Promise<void> {
+    throw new Error("Method 'pushSequence' not yet supported in @valkyr/db driver");
   }
 
   /*

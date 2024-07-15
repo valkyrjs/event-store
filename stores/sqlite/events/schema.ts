@@ -1,11 +1,4 @@
-import {
-  index,
-  integer,
-  type SQLiteColumn,
-  sqliteTable,
-  type SQLiteTableWithColumns,
-  text,
-} from "drizzle-orm/sqlite-core";
+import { index, type SQLiteColumn, sqliteTable, type SQLiteTableWithColumns, text } from "drizzle-orm/sqlite-core";
 
 export const events: EventTable = sqliteTable("valkyr_events", {
   id: text("id").primaryKey(),
@@ -13,8 +6,8 @@ export const events: EventTable = sqliteTable("valkyr_events", {
   type: text("type").notNull(),
   data: text("data", { mode: "json" }).$type<Record<string, any>>().notNull(),
   meta: text("meta", { mode: "json" }).$type<Record<string, any>>().notNull(),
-  recorded: integer("recorded").notNull(),
-  created: integer("created").notNull(),
+  recorded: text("recorded").notNull(),
+  created: text("created").notNull(),
 }, (table) => ({
   streamIdx: index("stream_idx").on(table.stream),
   typeIdx: index("type_idx").on(table.type),
@@ -89,25 +82,25 @@ type EventTable = SQLiteTableWithColumns<{
     recorded: SQLiteColumn<{
       name: "recorded";
       tableName: "valkyr_events";
-      dataType: "number";
-      columnType: "SQLiteInteger";
-      data: number;
-      driverParam: number | string;
+      dataType: "string";
+      columnType: "SQLiteText";
+      data: string;
+      driverParam: string;
       notNull: true;
       hasDefault: false;
-      enumValues: undefined;
+      enumValues: [string, ...string[]];
       baseColumn: never;
     }>;
     created: SQLiteColumn<{
       name: "created";
       tableName: "valkyr_events";
-      dataType: "number";
-      columnType: "SQLiteInteger";
-      data: number;
-      driverParam: number | string;
+      dataType: "string";
+      columnType: "SQLiteText";
+      data: string;
+      driverParam: string;
       notNull: true;
       hasDefault: false;
-      enumValues: undefined;
+      enumValues: [string, ...string[]];
       baseColumn: never;
     }>;
   };
