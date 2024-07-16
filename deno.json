@@ -1,6 +1,6 @@
 {
   "name": "@valkyr/event-store",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "exports": {
     ".": "./mod.ts",
     "./pg": "./stores/pg/event-store.ts",
@@ -17,7 +17,6 @@
     "@valkyr/testcontainers": "jsr:@valkyr/testcontainers@1.0.0",
     "ajv": "npm:ajv@8.14.0",
     "drizzle-kit": "npm:drizzle-kit@0.22.8",
-    "drizzle-kit/": "npm:/drizzle-kit@0.22.8/",
     "drizzle-orm": "npm:drizzle-orm@0.31.2",
     "json-refs": "npm:json-refs@3.0.15",
     "json-schema": "npm:json-schema@0.4.0",

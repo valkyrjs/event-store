@@ -29,6 +29,8 @@
  * ```
  */
 
+import { drizzle } from "drizzle-orm/bun-sqlite";
+import type { Database as SQLiteDatabase } from "sqlite";
 import type { AnyZodObject } from "zod";
 
 import { Contextor } from "~libraries/contextor.ts";
@@ -45,7 +47,7 @@ import { Database } from "~utilities/database.ts";
 
 import { pushEventRecord, pushEventRecordSequence } from "../utilities.ts";
 import { ContextProvider } from "./contexts/provider.ts";
-import type { EventStoreDB } from "./database.ts";
+import { type EventStoreDB, schema } from "./database.ts";
 import { EventProvider } from "./events/provider.ts";
 
 export { migrate } from "./database.ts";
@@ -76,7 +78,11 @@ export class SQLiteEventStore<TEvent extends Event, TRecord extends EventRecord 
   readonly contextor: Contextor<TRecord>;
 
   constructor(config: Config<TEvent, TRecord>) {
-    this.#database = new Database({ getInstance: config.database });
+    this.#database = new Database({
+      getInstance() {
+        return drizzle(config.database(), { schema });
+      },
+    });
     this.#events = config.events;
     this.#validators = config.validators;
 
@@ -223,7 +229,7 @@ export class SQLiteEventStore<TEvent extends Event, TRecord extends EventRecord 
  */
 
 type Config<TEvent extends Event, TRecord extends EventRecord> = {
-  database: () => EventStoreDB;
+  database: () => SQLiteDatabase;
   events: EventList<TEvent>;
   validators: Map<TEvent["type"], AnyZodObject>;
   hooks?: EventHooks<TRecord>;

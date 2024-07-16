@@ -1,7 +1,6 @@
 import { resolve } from "node:path";
 
 import { PostgresTestContainer } from "@valkyr/testcontainers/postgres";
-import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { afterAll, afterEach, beforeAll, describe } from "std/testing/bdd.ts";
 
@@ -54,9 +53,7 @@ describe("PGEventStore", () => {
 
 async function getEventStore(databaseUrl: string, hooks: EventHooks<UserEventRecord> = {}) {
   return new PGEventStore<UserEvent>({
-    database: () => {
-      return drizzle(postgres(databaseUrl));
-    },
+    database: () => postgres(databaseUrl),
     events,
     validators,
     hooks,

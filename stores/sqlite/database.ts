@@ -6,7 +6,7 @@ import { prepareMigrationFiles } from "../../utilities/migrations.ts";
 import { contexts } from "./contexts/schema.ts";
 import { events } from "./events/schema.ts";
 
-const schema = { contexts, events };
+export const schema = { contexts, events };
 
 /**
  * Takes a `npm:sqlite` database instance and migrates event store structure.
