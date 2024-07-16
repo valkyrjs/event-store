@@ -8,13 +8,13 @@ import type { SQLiteEventStore } from "~stores/sqlite/event-store.ts";
 import type { EventHooks } from "~types/event-store.ts";
 
 import { CustomServiceError } from "../mocks/errors.ts";
-import type { UserEvent, UserEventRecord } from "../mocks/events.ts";
+import type { SystemEvent, SystemEventRecord } from "../mocks/events.ts";
 import { getUserReducer } from "../mocks/user-reducer.ts";
 
 export function testEventStoreMethods(
   getEventStore: (
-    hooks?: EventHooks<UserEventRecord>,
-  ) => Promise<PGEventStore<UserEvent> | SQLiteEventStore<UserEvent>>,
+    hooks?: EventHooks<SystemEventRecord>,
+  ) => Promise<PGEventStore<SystemEvent> | SQLiteEventStore<SystemEvent>>,
 ) {
   describe(".add", () => {
     it("should throw a 'EventValidationFailure' on data validation error", async () => {
@@ -23,7 +23,7 @@ export function testEventStoreMethods(
       assertRejects(
         async () =>
           store.add({
-            type: "UserCreated",
+            type: "user:created",
             data: {
               name: {
                 given: "John",
@@ -47,7 +47,7 @@ export function testEventStoreMethods(
       assertRejects(
         async () =>
           store.add({
-            type: "UserCreated",
+            type: "user:created",
             data: {
               name: {
                 given: "John",
@@ -64,14 +64,14 @@ export function testEventStoreMethods(
     it("should throw a 'EventValidationFailure' on event validation error", async () => {
       const store = await getEventStore();
 
-      store.validator.on("UserCreated", async () => {
+      store.validator.on("user:created", async () => {
         throw new Error("Test Failure");
       });
 
       assertRejects(
         async () =>
           store.add({
-            type: "UserCreated",
+            type: "user:created",
             data: {
               name: {
                 given: "John",
@@ -92,14 +92,14 @@ export function testEventStoreMethods(
         },
       });
 
-      store.validator.on("UserCreated", async () => {
+      store.validator.on("user:created", async () => {
         throw new Error("Test Failure");
       });
 
       assertRejects(
         async () =>
           store.add({
-            type: "UserCreated",
+            type: "user:created",
             data: {
               name: {
                 given: "John",
@@ -123,7 +123,7 @@ export function testEventStoreMethods(
       assertRejects(
         async () =>
           store.add({
-            type: "UserCreated",
+            type: "user:created",
             data: {
               name: {
                 given: "John",
@@ -151,7 +151,7 @@ export function testEventStoreMethods(
       assertRejects(
         async () =>
           store.add({
-            type: "UserCreated",
+            type: "user:created",
             data: {
               name: {
                 given: "John",
@@ -165,11 +165,11 @@ export function testEventStoreMethods(
       );
     });
 
-    it("should insert and project 'UserCreated' event", async () => {
+    it("should insert and project 'user:created' event", async () => {
       const store = await getEventStore();
 
       const event = {
-        type: "UserCreated",
+        type: "user:created",
         data: {
           name: {
             given: "John",
@@ -181,7 +181,7 @@ export function testEventStoreMethods(
 
       let projectedResult: string = "";
 
-      store.projector.on("UserCreated", async (record) => {
+      store.projector.on("user:created", async (record) => {
         projectedResult = `${record.data.name.given} ${record.data.name.family} | ${record.data.email}`;
       });
 
@@ -191,11 +191,11 @@ export function testEventStoreMethods(
       assertEquals(projectedResult, "John Doe | john.doe@fixture.none");
     });
 
-    it("should insert 'UserCreated' and ignore 'project' error", async () => {
+    it("should insert 'user:created' and ignore 'project' error", async () => {
       const store = await getEventStore();
 
       const event = {
-        type: "UserCreated",
+        type: "user:created",
         data: {
           name: {
             given: "John",
@@ -205,7 +205,7 @@ export function testEventStoreMethods(
         },
       } as const;
 
-      store.projector.on("UserCreated", async () => {
+      store.projector.on("user:created", async () => {
         throw new Error();
       });
 
@@ -214,7 +214,7 @@ export function testEventStoreMethods(
       assertObjectMatch(await store.events.getByStream(stream).then((rows) => rows[0]), event);
     });
 
-    it("should insert 'UserCreated' and log 'project' error via 'afterEventError'", async () => {
+    it("should insert 'user:created' and log 'project' error via 'afterEventError'", async () => {
       let projectionErrorLog: string = "";
 
       const store = await getEventStore({
@@ -224,7 +224,7 @@ export function testEventStoreMethods(
       });
 
       const event = {
-        type: "UserCreated",
+        type: "user:created",
         data: {
           name: {
             given: "John",
@@ -234,20 +234,20 @@ export function testEventStoreMethods(
         },
       } as const;
 
-      store.projector.on("UserCreated", async (record) => {
+      store.projector.on("user:created", async (record) => {
         throw new Error(record.data.email);
       });
 
       const stream = await store.add(event);
 
       assertObjectMatch(await store.events.getByStream(stream).then((rows) => rows[0]), event);
-      assertEquals(projectionErrorLog, "UserCreated | john.doe@fixture.none");
+      assertEquals(projectionErrorLog, "user:created | john.doe@fixture.none");
     });
 
-    it("should insert 'UserCreated' and add it to 'tenant:xyz' context", async () => {
+    it("should insert 'user:created' and add it to 'tenant:xyz' context", async () => {
       const store = await getEventStore();
 
-      store.contextor.register("UserCreated", () => [
+      store.contextor.register("user:created", () => [
         {
           key: "tenant:xyz",
           op: "insert",
@@ -255,7 +255,7 @@ export function testEventStoreMethods(
       ]);
 
       await store.add({
-        type: "UserCreated",
+        type: "user:created",
         data: {
           name: {
             given: "John",
@@ -270,7 +270,7 @@ export function testEventStoreMethods(
       assertEquals(res1.length, 1);
 
       await store.add({
-        type: "UserCreated",
+        type: "user:created",
         data: {
           name: {
             given: "Jane",
@@ -285,17 +285,17 @@ export function testEventStoreMethods(
       assertEquals(res2.length, 2);
     });
 
-    it("should insert 'UserEmailSet' and remove it from 'tenant:xyz' context", async () => {
+    it("should insert 'user:email_set' and remove it from 'tenant:xyz' context", async () => {
       const store = await getEventStore();
 
-      store.contextor.register("UserCreated", () => [
+      store.contextor.register("user:created", () => [
         {
           key: "tenant:zyx",
           op: "insert",
         },
       ]);
 
-      store.contextor.register("UserEmailSet", () => [
+      store.contextor.register("user:email_set", () => [
         {
           key: "tenant:zyx",
           op: "remove",
@@ -304,7 +304,7 @@ export function testEventStoreMethods(
 
       await store.add({
         stream: "user-1",
-        type: "UserCreated",
+        type: "user:created",
         data: {
           name: {
             given: "John",
@@ -320,7 +320,7 @@ export function testEventStoreMethods(
 
       await store.add({
         stream: "user-1",
-        type: "UserEmailSet",
+        type: "user:email_set",
         data: {
           email: "jane.doe@fixture.none",
         },
@@ -336,14 +336,14 @@ export function testEventStoreMethods(
   });
 
   describe(".addSequence", () => {
-    it("should insert 'UserCreated', 'UserGivenNameSet', and 'UserEmailSet' in a sequence of events", async () => {
+    it("should insert 'user:created', 'user:given_name_set', and 'user:email_set' in a sequence of events", async () => {
       const store = await getEventStore();
       const stream = nanoid();
 
       const events = [
         {
           stream,
-          type: "UserCreated",
+          type: "user:created",
           data: {
             name: {
               given: "Jane",
@@ -354,14 +354,14 @@ export function testEventStoreMethods(
         } as const,
         {
           stream,
-          type: "UserGivenNameSet",
+          type: "user:given_name_set",
           data: {
             given: "John",
           },
         } as const,
         {
           stream,
-          type: "UserEmailSet",
+          type: "user:email_set",
           data: {
             email: "john@doe.com",
           },
@@ -394,7 +394,7 @@ export function testEventStoreMethods(
       const events = [
         {
           stream,
-          type: "UserCreated",
+          type: "user:created",
           data: {
             name: {
               given: "Jane",
@@ -405,14 +405,14 @@ export function testEventStoreMethods(
         } as const,
         {
           stream,
-          type: "UserGivenNameSet",
+          type: "user:given_name_set",
           data: {
             givens: "John",
           },
         } as any,
         {
           stream,
-          type: "UserEmailSet",
+          type: "user:email_set",
           data: {
             email: "john@doe.com",
           },
@@ -435,13 +435,13 @@ export function testEventStoreMethods(
   });
 
   describe(".reducer", () => {
-    it("should create a 'user' reducer and reject a 'UserEmailSet' event", async () => {
+    it("should create a 'user' reducer and reject a 'user:email_set' event", async () => {
       const store = await getEventStore();
       const stream = nanoid();
 
       const userReducer = getUserReducer(store);
 
-      store.validator.on("UserEmailSet", async (record) => {
+      store.validator.on("user:email_set", async (record) => {
         const user = await store.getStreamState(stream, userReducer);
         if (user === undefined) {
           throw new Error("Event stream does not exist");
@@ -453,7 +453,7 @@ export function testEventStoreMethods(
 
       await store.add({
         stream,
-        type: "UserCreated",
+        type: "user:created",
         data: {
           name: {
             given: "John",
@@ -467,7 +467,7 @@ export function testEventStoreMethods(
         async () =>
           await store.add({
             stream,
-            type: "UserEmailSet",
+            type: "user:email_set",
             data: {
               email: "john.doe@fixture.none",
             },

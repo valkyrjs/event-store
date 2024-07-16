@@ -1,29 +1,29 @@
 import type { EventStore } from "~types/event-store.ts";
 
-import type { UserEvent, UserEventRecord } from "./events.ts";
+import type { SystemEvent, SystemEventRecord } from "./events.ts";
 
-export function getUserReducer(store: EventStore<UserEvent, UserEventRecord>) {
+export function getUserReducer(store: EventStore<SystemEvent, SystemEventRecord>) {
   return store.reducer<UserState>((state, event) => {
     switch (event.type) {
-      case "UserCreated": {
+      case "user:created": {
         state.name.given = event.data.name.given;
         state.name.family = event.data.name.family;
         state.email = event.data.email;
         break;
       }
-      case "UserGivenNameSet": {
+      case "user:given_name_set": {
         state.name.given = event.data.given;
         break;
       }
-      case "UserFamilyNameSet": {
+      case "user:family_name_set": {
         state.name.family = event.data.family;
         break;
       }
-      case "UserEmailSet": {
+      case "user:email_set": {
         state.email = event.data.email;
         break;
       }
-      case "UserDeactivated": {
+      case "user:deactivated": {
         state.active = false;
         break;
       }

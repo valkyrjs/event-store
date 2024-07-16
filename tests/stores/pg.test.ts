@@ -8,7 +8,7 @@ import { migrate, PGEventStore } from "~stores/pg/event-store.ts";
 import type { EventHooks } from "~types/event-store.ts";
 
 import { testEventStoreMethods } from "./helpers/event-store.bdd.ts";
-import { events, type UserEvent, type UserEventRecord, validators } from "./mocks/events.ts";
+import { events, type SystemEvent, type SystemEventRecord, validators } from "./mocks/events.ts";
 
 const DB_NAME = "sandbox";
 const DB_MIGRATE = resolve(import.meta.dirname!, "pg-migrate");
@@ -42,7 +42,7 @@ afterAll(async () => {
  */
 
 describe("PGEventStore", () => {
-  testEventStoreMethods(async (hooks?: EventHooks<UserEventRecord>) => getEventStore(container.url(DB_NAME), hooks));
+  testEventStoreMethods(async (hooks?: EventHooks<SystemEventRecord>) => getEventStore(container.url(DB_NAME), hooks));
 });
 
 /*
@@ -51,8 +51,8 @@ describe("PGEventStore", () => {
  |--------------------------------------------------------------------------------
  */
 
-async function getEventStore(databaseUrl: string, hooks: EventHooks<UserEventRecord> = {}) {
-  return new PGEventStore<UserEvent>({
+async function getEventStore(databaseUrl: string, hooks: EventHooks<SystemEventRecord> = {}) {
+  return new PGEventStore<SystemEvent>({
     database: () => postgres(databaseUrl),
     events,
     validators,

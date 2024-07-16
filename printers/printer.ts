@@ -46,19 +46,23 @@ export async function printEvents({ paths, output, modules = [] }: Options) {
         // deno-fmt-ignore-file
         // This is an auto generated file. Do not modify this file!
         
-        import { type AnyZodObject, type Empty, type Event, z } from "@valkyr/event-store";
+        import { type AnyZodObject, type Empty, type Event, type EventToRecord, z } from "@valkyr/event-store";
     
-        export const events = new Set([${names.map((event) => `"${event}"`).join(",")}] as const);
+        export const events = new Set([${names.sort().map((event) => `"${event}"`).join(",")}] as const);
 
-        export const validators = new Map<${
-        Array.from(validators.keys()).map((name) => `"${name}"`).join(" | ")
-      }, AnyZodObject>([
-          ${Array.from(validators.entries()).map(([key, value]) => `["${key}", ${value}]`).join(",")}
+        export const validators = new Map<SystemEvent["type"], AnyZodObject>([
+          ${
+        Array.from(validators.entries()).sort(([a], [b]) => a > b ? 1 : -1).map(([key, value]) =>
+          `["${key}", ${value}]`
+        ).join(",")
+      }
         ]);
 
-        export type Events = ${names.map((name) => pascalcase(name)).join(" | ")};
+        export type SystemEventRecord = EventToRecord<SystemEvent>;
 
-        ${types.join("\n\n")}
+        export type SystemEvent = ${names.sort().map((name) => pascalcase(name)).join(" | ")};
+
+        ${types.sort().join("\n\n")}
       `,
       {
         parser: "typescript",

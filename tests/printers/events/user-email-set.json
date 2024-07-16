@@ -1,6 +1,6 @@
 {
   "event": {
-    "type": "user:email-set",
+    "type": "user:email_set",
     "data": {
       "email": {
         "type": "string"

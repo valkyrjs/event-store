@@ -1,6 +1,6 @@
 {
   "event": {
-    "type": "user:given-name-set",
+    "type": "user:given_name_set",
     "data": {
       "given": {
         "type": "string"
