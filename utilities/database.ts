@@ -10,7 +10,7 @@ export class Database<TInstance extends Drizzle> {
   /**
    * Get the drizzle instance registered for this database.
    */
-  get instance() {
+  get instance(): TInstance {
     if (this.#instance === undefined) {
       this.#instance = this.#hooks.getInstance();
     }
