@@ -1,5 +1,5 @@
 {
   "event": {
-    "type": "UserDeactivated"
+    "type": "user:deactivated"
   }
 }

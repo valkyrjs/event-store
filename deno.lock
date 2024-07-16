@@ -26,6 +26,7 @@
       "npm:json-schema-to-zod@2.1.0": "npm:json-schema-to-zod@2.1.0",
       "npm:json-schema@0.4.0": "npm:json-schema@0.4.0",
       "npm:nanoid@5.0.7": "npm:nanoid@5.0.7",
+      "npm:pascalcase@2.0.0": "npm:pascalcase@2.0.0",
       "npm:postgres": "npm:postgres@3.4.4",
       "npm:postgres@3.4.4": "npm:postgres@3.4.4",
       "npm:prettier@3.2.5": "npm:prettier@3.2.5",
@@ -521,6 +522,10 @@
           "get-intrinsic": "get-intrinsic@1.2.4",
           "set-function-length": "set-function-length@1.2.2"
         }
+      },
+      "camelcase@6.3.0": {
+        "integrity": "sha512-Gmy6FhYlCY7uOElZUSbxo2UCDH8owEk996gkbrpsgGtrJLM3J7jGxl9Ic7Qwwj4ivOE5AWZWRMecDdF7hqGjFA==",
+        "dependencies": {}
       },
       "chownr@1.1.4": {
         "integrity": "sha512-jJ0bqzaylmJtVnNgzTeSOs8DPavpbYgEr/b0YL8/2GO3xJEhInFmhKMUnEJQjZumK7KXGFhUy89PrsJWlakBVg==",
@@ -1020,6 +1025,12 @@
           "wrappy": "wrappy@1.0.2"
         }
       },
+      "pascalcase@2.0.0": {
+        "integrity": "sha512-DHpENy5Qm/FaX+x3iBLoMLG/XHNCTgL+yErm1TwuVaj6u4fiOSkYkf60vGtITk7hrKHOO4uCl9vRrD4hqjNKjg==",
+        "dependencies": {
+          "camelcase": "camelcase@6.3.0"
+        }
+      },
       "path-is-absolute@1.0.1": {
         "integrity": "sha512-AVbw3UJ2e9bq64vSaS9Am0fje1Pa8pbGqTTsmXfaIiMpnr5DlDhfJOuLj9Sf95ZPVDAUerDfEk88MPmPe7UCQg==",
         "dependencies": {}
@@ -1416,6 +1427,7 @@
       "npm:json-schema-to-zod@2.1.0",
       "npm:json-schema@0.4.0",
       "npm:nanoid@5.0.7",
+      "npm:pascalcase@2.0.0",
       "npm:postgres@3.4.4",
       "npm:prettier@3.2.5",
       "npm:zod@3.23.8"

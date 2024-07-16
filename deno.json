@@ -1,6 +1,6 @@
 {
   "name": "@valkyr/event-store",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "exports": {
     ".": "./mod.ts",
     "./pg": "./stores/pg/event-store.ts",
@@ -22,6 +22,7 @@
     "json-schema": "npm:json-schema@0.4.0",
     "json-schema-to-zod": "npm:json-schema-to-zod@2.1.0",
     "nanoid": "npm:nanoid@5.0.7",
+    "pascalcase": "npm:pascalcase@2.0.0",
     "postgres": "npm:postgres@3.4.4",
     "prettier": "npm:prettier@3.2.5",
     "sqlite": "jsr:@db/sqlite@0.11",

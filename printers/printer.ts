@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import { resolveRefs } from "json-refs";
 import { jsonSchemaToZod } from "json-schema-to-zod";
+import { pascalcase } from "pascalcase";
 import { format } from "prettier";
 
 import { ensureDir } from "../utilities/fs.ts";
@@ -55,7 +56,7 @@ export async function printEvents({ paths, output, modules = [] }: Options) {
           ${Array.from(validators.entries()).map(([key, value]) => `["${key}", ${value}]`).join(",")}
         ]);
 
-        export type Events = ${names.join(" | ")};
+        export type Events = ${names.map((name) => pascalcase(name)).join(" | ")};
 
         ${types.join("\n\n")}
       `,

@@ -1,3 +1,5 @@
+import { pascalcase } from "pascalcase";
+
 import type { Config } from "./asserts/events.ts";
 import { jsonSchema } from "./utilities/json-schema.ts";
 
@@ -21,7 +23,7 @@ export function getEventType(event: Config["event"]) {
       properties: event.meta,
     });
   }
-  return `export type ${event.type} = Event<"${event.type}", ${data}, ${meta}>;`;
+  return `export type ${pascalcase(event.type)} = Event<"${event.type}", ${data}, ${meta}>;`;
 }
 
 /**

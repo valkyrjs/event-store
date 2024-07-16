@@ -1,6 +1,6 @@
 {
   "event": {
-    "type": "UserFamilyNameSet",
+    "type": "user:family-name-set",
     "data": {
       "family": {
         "type": "string"

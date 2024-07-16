@@ -1,6 +1,6 @@
 {
   "event": {
-    "type": "UserCreated",
+    "type": "user:created",
     "data": {
       "name": {
         "type": "object",
