@@ -29,7 +29,6 @@
  * ```
  */
 
-import type { Sql as PGDatabase } from "postgres";
 import type { AnyZodObject } from "zod";
 
 import { Contextor } from "~libraries/contextor.ts";
@@ -42,11 +41,11 @@ import type { Event, EventRecord, EventStatus, EventToRecord } from "~types/even
 import type { EventHooks, EventReadOptions, EventStore, Pagination } from "~types/event-store.ts";
 import type { ReduceHandler, Reducer } from "~types/reducer.ts";
 import type { ExcludeEmptyFields } from "~types/utilities.ts";
-import type { Database } from "~utilities/database.ts";
+import { Database } from "~utilities/database.ts";
 
 import { pushEventRecord, pushEventRecordSequence } from "../utilities.ts";
 import { ContextProvider } from "./contexts/provider.ts";
-import { type EventStoreDB, makeEventStoreDatabase } from "./database.ts";
+import type { EventStoreDB } from "./database.ts";
 import { EventProvider } from "./events/provider.ts";
 
 export { migrate } from "./database.ts";
@@ -77,14 +76,14 @@ export class PGEventStore<TEvent extends Event, TRecord extends EventRecord = Ev
   readonly contextor: Contextor<TRecord>;
 
   constructor(config: Config<TEvent, TRecord>) {
-    this.#database = makeEventStoreDatabase(config.database);
+    this.#database = new Database({ getInstance: config.database });
     this.#events = config.events;
     this.#validators = config.validators;
 
     this.hooks = config.hooks ?? {};
 
-    this.contexts = new ContextProvider(this.#database.instance);
-    this.events = new EventProvider(this.#database.instance);
+    this.contexts = new ContextProvider(this.#database);
+    this.events = new EventProvider(this.#database);
 
     this.validator = new Validator<TRecord>();
     this.projector = new Projector<TRecord>();
@@ -224,7 +223,7 @@ export class PGEventStore<TEvent extends Event, TRecord extends EventRecord = Ev
  */
 
 type Config<TEvent extends Event, TRecord extends EventRecord> = {
-  database: PGDatabase;
+  database: () => EventStoreDB;
   events: EventList<TEvent>;
   validators: Map<TEvent["type"], AnyZodObject>;
   hooks?: EventHooks<TRecord>;

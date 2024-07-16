@@ -1,12 +1,13 @@
 import { and, eq } from "drizzle-orm";
 
 import type { Context } from "~types/context.ts";
+import type { Database } from "~utilities/database.ts";
 
 import type { EventStoreDB } from "../database.ts";
 import { contexts as schema } from "./schema.ts";
 
 export class ContextProvider {
-  constructor(readonly db: EventStoreDB) {}
+  constructor(readonly db: Database<EventStoreDB>) {}
 
   /**
    * Handle incoming context operations.

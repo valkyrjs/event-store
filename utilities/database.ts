@@ -1,9 +1,20 @@
 export class Database<TInstance extends Drizzle> {
-  #hooks: Hooks;
+  readonly #hooks: Hooks<TInstance>;
 
-  constructor(readonly instance: TInstance, hooks: Hooks) {
+  #instance?: TInstance;
+
+  constructor(hooks: Hooks<TInstance>) {
     this.#hooks = hooks;
-    this.close = this.close.bind(this);
+  }
+
+  /**
+   * Get the drizzle instance registered for this database.
+   */
+  get instance() {
+    if (this.#instance === undefined) {
+      this.#instance = this.#hooks.getInstance();
+    }
+    return this.#instance;
   }
 
   /**
@@ -137,13 +148,6 @@ export class Database<TInstance extends Drizzle> {
   get transaction(): TInstance["transaction"] {
     return this.instance.transaction.bind(this.instance);
   }
-
-  /**
-   * Disconnect the client and remove the instance.
-   */
-  async close() {
-    await this.#hooks.onCloseInstance();
-  }
 }
 
 /*
@@ -152,8 +156,8 @@ export class Database<TInstance extends Drizzle> {
  |--------------------------------------------------------------------------------
  */
 
-type Hooks = {
-  onCloseInstance(): Promise<void>;
+type Hooks<TInstance extends Drizzle> = {
+  getInstance(): TInstance;
 };
 
 type Drizzle = {

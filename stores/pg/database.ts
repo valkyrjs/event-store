@@ -2,26 +2,11 @@ import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { migrate as runMigration } from "drizzle-orm/postgres-js/migrator";
 import type { Sql } from "postgres";
 
-import { Database } from "~utilities/database.ts";
-
 import { prepareMigrationFiles } from "../../utilities/migrations.ts";
 import { contexts } from "./contexts/schema.ts";
 import { events } from "./events/schema.ts";
 
 const schema = { contexts, events };
-
-/**
- * Takes a `npm:postgres` database instance and returns a event store database.
- *
- * @param connection - SQLite connection to use for the database.
- */
-export function makeEventStoreDatabase(connection: Sql) {
-  return new Database<EventStoreDB>(drizzle(connection, { schema }), {
-    async onCloseInstance() {
-      await connection.end();
-    },
-  });
-}
 
 /**
  * Takes a `npm:postgres` database instance and migrates event store structure.

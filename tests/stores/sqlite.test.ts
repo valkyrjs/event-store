@@ -1,5 +1,6 @@
 import { resolve } from "node:path";
 
+import { drizzle } from "drizzle-orm/bun-sqlite";
 import { Database } from "sqlite";
 import { afterAll, describe } from "std/testing/bdd.ts";
 
@@ -40,7 +41,9 @@ describe("SQLiteEventStore", () => {
 async function getEventStore(hooks?: EventHooks<UserEventRecord>) {
   const database = new Database(":memory:");
   const store = new SQLiteEventStore<UserEvent>({
-    database,
+    database: () => {
+      return drizzle(database);
+    },
     events,
     validators,
     hooks,

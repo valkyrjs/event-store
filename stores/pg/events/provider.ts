@@ -1,12 +1,13 @@
 import { and, eq, gt, inArray, lt, sql } from "drizzle-orm";
 
 import type { EventRecord } from "~types/event.ts";
+import type { Database } from "~utilities/database.ts";
 
 import type { EventStoreDB } from "../database.ts";
 import { events as schema } from "./schema.ts";
 
 export class EventProvider {
-  constructor(readonly db: EventStoreDB) {}
+  constructor(readonly db: Database<EventStoreDB>) {}
 
   /**
    * Insert a new event record to the events table.
