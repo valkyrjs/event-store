@@ -18,7 +18,12 @@ export const validators = {
   data: new Map<Event["type"], AnyZodObject>([
     [
       "user:created",
-      z.object({ name: z.object({ given: z.string(), family: z.string() }).strict(), email: z.string() }).strict(),
+      z
+        .object({
+          name: z.object({ given: z.union([z.string(), z.null()]), family: z.union([z.string(), z.null()]) }).strict(),
+          email: z.string(),
+        })
+        .strict(),
     ],
     ["user:email_set", z.object({ email: z.string() }).strict()],
     ["user:family_name_set", z.object({ family: z.string() }).strict()],
@@ -36,7 +41,11 @@ export type Event = UserActivated | UserCreated | UserDeactivated | UserEmailSet
 
 export type UserActivated = TEvent<"user:activated", Empty, { auditor: string }>;
 
-export type UserCreated = TEvent<"user:created", { name: { given: string; family: string }; email: string }, Empty>;
+export type UserCreated = TEvent<
+  "user:created",
+  { name: { given: string | null; family: string | null }; email: string },
+  Empty
+>;
 
 export type UserDeactivated = TEvent<"user:deactivated", Empty, Empty>;
 

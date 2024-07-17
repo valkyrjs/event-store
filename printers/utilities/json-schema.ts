@@ -37,6 +37,9 @@ function compile(schema: JSONSchema4): string {
       if (typeof schema.type === "string") {
         return schema.type;
       }
+      if (Array.isArray(schema.type) === true) {
+        return schema.type.join(" | ");
+      }
       return "unknown";
     }
   }

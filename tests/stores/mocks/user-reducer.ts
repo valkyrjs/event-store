@@ -6,8 +6,8 @@ export function getUserReducer(store: EventStore<Event, EventRecord>) {
   return store.reducer<UserState>((state, event) => {
     switch (event.type) {
       case "user:created": {
-        state.name.given = event.data.name.given;
-        state.name.family = event.data.name.family;
+        state.name.given = event.data.name.given ?? "";
+        state.name.family = event.data.name.family ?? "";
         state.email = event.data.email;
         break;
       }
