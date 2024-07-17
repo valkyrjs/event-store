@@ -1,8 +1,8 @@
 import type { EventStore } from "~types/event-store.ts";
 
-import type { SystemEvent, SystemEventRecord } from "./events.ts";
+import type { Event, EventRecord } from "./events.ts";
 
-export function getUserReducer(store: EventStore<SystemEvent, SystemEventRecord>) {
+export function getUserReducer(store: EventStore<Event, EventRecord>) {
   return store.reducer<UserState>((state, event) => {
     switch (event.type) {
       case "user:created": {

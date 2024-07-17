@@ -67,7 +67,7 @@ export class PGEventStore<TEvent extends Event, TRecord extends EventRecord = Ev
   implements EventStore<TEvent, TRecord> {
   readonly #database: Database<EventStoreDB>;
   readonly #events: EventList<TEvent>;
-  readonly #validators: Map<TEvent["type"], AnyZodObject>;
+  readonly #validators: ValidatorConfig<TEvent>;
 
   readonly hooks: EventHooks<TRecord>;
 
@@ -218,8 +218,14 @@ export class PGEventStore<TEvent extends Event, TRecord extends EventRecord = Ev
    *
    * @param type - Event to get validator for.
    */
-  getValidator(type: TRecord["type"]): AnyZodObject {
-    return this.#validators.get(type)!;
+  getValidator(type: TRecord["type"]): {
+    data?: AnyZodObject;
+    meta?: AnyZodObject;
+  } {
+    return {
+      data: this.#validators.data.get(type),
+      meta: this.#validators.meta.get(type),
+    };
   }
 }
 
@@ -232,8 +238,13 @@ export class PGEventStore<TEvent extends Event, TRecord extends EventRecord = Ev
 type Config<TEvent extends Event, TRecord extends EventRecord> = {
   database: () => PostgreSQL;
   events: EventList<TEvent>;
-  validators: Map<TEvent["type"], AnyZodObject>;
+  validators: ValidatorConfig<TEvent>;
   hooks?: EventHooks<TRecord>;
+};
+
+type ValidatorConfig<TEvent extends Event> = {
+  data: Map<TEvent["type"], AnyZodObject>;
+  meta: Map<TEvent["type"], AnyZodObject>;
 };
 
 type EventList<E extends Event> = Set<E["type"]>;

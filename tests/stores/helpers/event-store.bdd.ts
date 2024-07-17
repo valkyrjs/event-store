@@ -8,13 +8,13 @@ import type { SQLiteEventStore } from "~stores/sqlite/event-store.ts";
 import type { EventHooks } from "~types/event-store.ts";
 
 import { CustomServiceError } from "../mocks/errors.ts";
-import type { SystemEvent, SystemEventRecord } from "../mocks/events.ts";
+import type { Event, EventRecord } from "../mocks/events.ts";
 import { getUserReducer } from "../mocks/user-reducer.ts";
 
 export function testEventStoreMethods(
   getEventStore: (
-    hooks?: EventHooks<SystemEventRecord>,
-  ) => Promise<PGEventStore<SystemEvent> | SQLiteEventStore<SystemEvent>>,
+    hooks?: EventHooks<EventRecord>,
+  ) => Promise<PGEventStore<Event> | SQLiteEventStore<Event>>,
 ) {
   describe(".add", () => {
     it("should throw a 'EventValidationFailure' on data validation error", async () => {

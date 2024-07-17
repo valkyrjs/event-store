@@ -46,21 +46,30 @@ export async function printEvents({ paths, output, modules = [] }: Options) {
         // deno-fmt-ignore-file
         // This is an auto generated file. Do not modify this file!
         
-        import { type AnyZodObject, type Empty, type Event, type EventToRecord, z } from "@valkyr/event-store";
+        import { type AnyZodObject, type Empty, type Event as TEvent, type EventToRecord, z } from "@valkyr/event-store";
     
         export const events = new Set([${names.sort().map((event) => `"${event}"`).join(",")}] as const);
 
-        export const validators = new Map<SystemEvent["type"], AnyZodObject>([
-          ${
-        Array.from(validators.entries()).sort(([a], [b]) => a > b ? 1 : -1).map(([key, value]) =>
+        export const validators = {
+          data: new Map<Event["type"], AnyZodObject>([
+            ${
+        Array.from(validators.data.entries()).sort(([a], [b]) => a > b ? 1 : -1).map(([key, value]) =>
           `["${key}", ${value}]`
         ).join(",")
       }
-        ]);
+          ]),
+          meta: new Map<Event["type"], AnyZodObject>([
+            ${
+        Array.from(validators.meta.entries()).sort(([a], [b]) => a > b ? 1 : -1).map(([key, value]) =>
+          `["${key}", ${value}]`
+        ).join(",")
+      }
+          ]),
+        }
 
-        export type SystemEventRecord = EventToRecord<SystemEvent>;
+        export type EventRecord = EventToRecord<Event>;
 
-        export type SystemEvent = ${names.sort().map((name) => pascalcase(name)).join(" | ")};
+        export type Event = ${names.sort().map((name) => pascalcase(name)).join(" | ")};
 
         ${types.sort().join("\n\n")}
       `,
@@ -86,7 +95,10 @@ async function getEventStoreContainer(
     names: [],
     types: [],
     props: new Set(),
-    validators: new Map<string, any>(),
+    validators: {
+      data: new Map<string, any>(),
+      meta: new Map<string, any>(),
+    },
     imports: [],
   };
 
@@ -97,7 +109,10 @@ async function getEventStoreContainer(
     container.types.push(getEventType(event));
     if (event.data !== undefined) {
       container.props.add({ name: type, props: jsonSchema.propertyNames(event.data) });
-      container.validators.set(type, await getEventValidator(type, event.data));
+      container.validators.data.set(type, await getEventValidator(type, event.data));
+    }
+    if (event.meta !== undefined) {
+      container.validators.meta.set(type, await getEventValidator(type, event.meta));
     }
   }
 
@@ -106,16 +121,33 @@ async function getEventStoreContainer(
   return container;
 }
 
-async function getLocalConfigs(paths: string[]): Promise<Config[]> {
-  const events: Config[] = [];
+async function getLocalConfigs(paths: string[], events: Config[] = []): Promise<Config[]> {
   for (const path of paths) {
-    for (const eventPath of await readdir(path)) {
-      const config = JSON.parse(new TextDecoder().decode(await readFile(join(path, eventPath))));
+    for (const entity of await readdir(path, { withFileTypes: true })) {
+      if (entity.isDirectory()) {
+        await resolveLocalConfigs(join(path, entity.name), events);
+      }
+      if (entity.isFile() === true && entity.name.endsWith(".json")) {
+        const config = JSON.parse(new TextDecoder().decode(await readFile(join(path, entity.name))));
+        assertConfig(config);
+        events.push(config);
+      }
+    }
+  }
+  return events;
+}
+
+async function resolveLocalConfigs(path: string, events: Config[]) {
+  for (const entity of await readdir(path, { withFileTypes: true })) {
+    if (entity.isDirectory()) {
+      resolveLocalConfigs(join(path, entity.name), events);
+    }
+    if (entity.isFile() === true && entity.name.endsWith(".json")) {
+      const config = JSON.parse(new TextDecoder().decode(await readFile(join(path, entity.name))));
       assertConfig(config);
       events.push(config);
     }
   }
-  return events;
 }
 
 function getModuleConfigs(configs: any[]): Config[] {
@@ -214,6 +246,9 @@ type EventStoreContainer = {
   names: string[];
   types: string[];
   props: Set<{ name: string; props: string[] }>;
-  validators: Map<string, any>;
+  validators: {
+    data: Map<string, any>;
+    meta: Map<string, any>;
+  };
   imports: string[];
 };

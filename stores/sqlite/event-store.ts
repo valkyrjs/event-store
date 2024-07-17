@@ -66,7 +66,7 @@ export class SQLiteEventStore<TEvent extends Event, TRecord extends EventRecord 
   implements EventStore<TEvent, TRecord> {
   readonly #database: Database<EventStoreDB>;
   readonly #events: EventList<TEvent>;
-  readonly #validators: Map<TEvent["type"], AnyZodObject>;
+  readonly #validators: ValidatorConfig<TEvent>;
 
   readonly hooks: EventHooks<TRecord>;
 
@@ -217,8 +217,14 @@ export class SQLiteEventStore<TEvent extends Event, TRecord extends EventRecord 
    *
    * @param type - Event to get validator for.
    */
-  getValidator(type: TRecord["type"]): AnyZodObject {
-    return this.#validators.get(type)!;
+  getValidator(type: TRecord["type"]): {
+    data?: AnyZodObject;
+    meta?: AnyZodObject;
+  } {
+    return {
+      data: this.#validators.data.get(type),
+      meta: this.#validators.meta.get(type),
+    };
   }
 }
 
@@ -231,8 +237,13 @@ export class SQLiteEventStore<TEvent extends Event, TRecord extends EventRecord 
 type Config<TEvent extends Event, TRecord extends EventRecord> = {
   database: () => SQLiteDatabase;
   events: EventList<TEvent>;
-  validators: Map<TEvent["type"], AnyZodObject>;
+  validators: ValidatorConfig<TEvent>;
   hooks?: EventHooks<TRecord>;
+};
+
+type ValidatorConfig<TEvent extends Event> = {
+  data: Map<TEvent["type"], AnyZodObject>;
+  meta: Map<TEvent["type"], AnyZodObject>;
 };
 
 type EventList<E extends Event> = Set<E["type"]>;

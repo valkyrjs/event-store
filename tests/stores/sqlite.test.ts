@@ -7,7 +7,7 @@ import { migrate, SQLiteEventStore } from "~stores/sqlite/event-store.ts";
 import type { EventHooks } from "~types/event-store.ts";
 
 import { testEventStoreMethods } from "./helpers/event-store.bdd.ts";
-import { events, type SystemEvent, type SystemEventRecord, validators } from "./mocks/events.ts";
+import { type Event, type EventRecord, events, validators } from "./mocks/events.ts";
 
 const DB_MIGRATE = resolve(import.meta.dirname!, "sqlite-migrate");
 
@@ -28,7 +28,7 @@ afterAll(async () => {
  */
 
 describe("SQLiteEventStore", () => {
-  testEventStoreMethods(async (hooks?: EventHooks<SystemEventRecord>) => getEventStore(hooks));
+  testEventStoreMethods(async (hooks?: EventHooks<EventRecord>) => getEventStore(hooks));
 });
 
 /*
@@ -37,9 +37,9 @@ describe("SQLiteEventStore", () => {
  |--------------------------------------------------------------------------------
  */
 
-async function getEventStore(hooks?: EventHooks<SystemEventRecord>) {
+async function getEventStore(hooks?: EventHooks<EventRecord>) {
   const database = new Database(":memory:");
-  const store = new SQLiteEventStore<SystemEvent>({
+  const store = new SQLiteEventStore<Event>({
     database: () => database,
     events,
     validators,

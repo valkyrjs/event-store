@@ -88,15 +88,30 @@ async function validateEventRecord(
   store: PGEventStore<any> | SQLiteEventStore<any>,
   record: any,
 ) {
-  const validator = store.getValidator(record.type);
-  if (validator !== undefined) {
-    const result = await validator.safeParseAsync(record.data);
-    if (result.success === false) {
-      const eventError = new EventDataValidationFailure(result.error.flatten().fieldErrors);
-      if (store.hooks?.beforeEventError !== undefined) {
-        throw await store.hooks?.beforeEventError(eventError, record);
+  const { data, meta } = store.getValidator(record.type);
+  if (data !== undefined || meta !== undefined) {
+    const errors = [];
+
+    if (data !== undefined) {
+      const result = await data.safeParseAsync(record.data);
+      if (result.success === false) {
+        errors.push(result.error.flatten().fieldErrors);
       }
-      throw eventError;
+    }
+
+    if (meta !== undefined) {
+      const result = await meta.safeParseAsync(record.meta);
+      if (result.success === false) {
+        errors.push(result.error.flatten().fieldErrors);
+      }
+    }
+
+    if (errors.length > 0) {
+      const error = new EventDataValidationFailure(errors);
+      if (store.hooks?.beforeEventError !== undefined) {
+        throw await store.hooks?.beforeEventError(error, record);
+      }
+      throw error;
     }
   }
 

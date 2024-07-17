@@ -23,7 +23,7 @@ export function getEventType(event: Config["event"]) {
       properties: event.meta,
     });
   }
-  return `export type ${pascalcase(event.type)} = Event<"${event.type}", ${data}, ${meta}>;`;
+  return `export type ${pascalcase(event.type)} = TEvent<"${event.type}", ${data}, ${meta}>;`;
 }
 
 /**

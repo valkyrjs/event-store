@@ -8,7 +8,7 @@ export class EventDataValidationFailure extends Error {
   readonly step = "validate";
 
   constructor(readonly data: unknown) {
-    super("Invalid event 'data' provided.");
+    super("Invalid event provided.");
   }
 }
 
