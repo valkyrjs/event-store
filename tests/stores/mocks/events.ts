@@ -11,6 +11,7 @@ export const events = new Set(
     "user:email_set",
     "user:family_name_set",
     "user:given_name_set",
+    "user:meta_added",
   ] as const,
 );
 
@@ -28,6 +29,7 @@ export const validators = {
     ["user:email_set", z.object({ email: z.string() }).strict()],
     ["user:family_name_set", z.object({ family: z.string() }).strict()],
     ["user:given_name_set", z.object({ given: z.string() }).strict()],
+    ["user:meta_added", z.object({ meta: z.object({}).catchall(z.any()) }).strict()],
   ]),
   meta: new Map<Event["type"], AnyZodObject>([
     ["user:activated", z.object({ auditor: z.string() }).strict()],
@@ -37,7 +39,14 @@ export const validators = {
 
 export type EventRecord = EventToRecord<Event>;
 
-export type Event = UserActivated | UserCreated | UserDeactivated | UserEmailSet | UserFamilyNameSet | UserGivenNameSet;
+export type Event =
+  | UserActivated
+  | UserCreated
+  | UserDeactivated
+  | UserEmailSet
+  | UserFamilyNameSet
+  | UserGivenNameSet
+  | UserMetaAdded;
 
 export type UserActivated = TEvent<"user:activated", Empty, { auditor: string }>;
 
@@ -54,3 +63,5 @@ export type UserEmailSet = TEvent<"user:email_set", { email: string }, { auditor
 export type UserFamilyNameSet = TEvent<"user:family_name_set", { family: string }, Empty>;
 
 export type UserGivenNameSet = TEvent<"user:given_name_set", { given: string }, Empty>;
+
+export type UserMetaAdded = TEvent<"user:meta_added", { meta: any }, Empty>;

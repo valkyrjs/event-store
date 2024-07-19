@@ -176,7 +176,7 @@ function populateProperties(props: any) {
     const prop = props[key];
     if (prop.type === "object") {
       prop.required = Object.keys(prop.properties);
-      prop.additionalProperties = false;
+      prop.additionalProperties = prop.additionalProperties === true;
     }
   }
   return props;

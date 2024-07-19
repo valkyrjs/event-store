@@ -193,6 +193,30 @@ export function testEventStoreMethods(
       assertEquals(projectedResult, "John Doe | john.doe@fixture.none");
     });
 
+    it("should insert 'user:meta_added' event", async () => {
+      const store = await getEventStore();
+
+      const event = {
+        type: "user:meta_added",
+        data: {
+          meta: {
+            foo: "bar",
+          },
+        },
+      } as const;
+
+      let projectedResult: string = "";
+
+      store.projector.on("user:meta_added", async (record) => {
+        projectedResult = record.data.meta.foo;
+      });
+
+      const stream = await store.add(event);
+
+      assertObjectMatch(await store.events.getByStream(stream).then((rows) => rows[0]), event);
+      assertEquals(projectedResult, "bar");
+    });
+
     it("should insert 'user:created' and ignore 'project' error", async () => {
       const store = await getEventStore();
 

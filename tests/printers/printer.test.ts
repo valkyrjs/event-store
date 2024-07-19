@@ -28,6 +28,7 @@ describe("Events Printer", () => {
       "user:email_set",
       "user:family_name_set",
       "user:given_name_set",
+      "user:meta_added",
     ]);
 
     assertArrayIncludes(Array.from(validators.data.keys()), [

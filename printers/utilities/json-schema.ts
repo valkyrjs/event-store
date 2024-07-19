@@ -11,6 +11,9 @@ function compile(schema: JSONSchema4): string {
       if (schema.properties === undefined) {
         throw new Error("Missing properties in schema object");
       }
+      if (Object.keys(schema.properties).length === 0 && schema.additionalProperties === true) {
+        return "any";
+      }
       const properties: string[] = [];
       for (const property in schema.properties) {
         properties.push(`${property}: ${compile(schema.properties[property])}`);
