@@ -1,6 +1,5 @@
 {
   "deno.enable": true,
-  "deno.lint": true,
   "eslint.nodePath": "./.eslint/node_modules",
   "eslint.options": {
     "overrideConfigFile": "./.eslint/eslint.config.mjs"
