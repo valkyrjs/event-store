@@ -2,7 +2,7 @@ import { IndexedDatabase, MemoryDatabase } from "@valkyr/db";
 
 import type { EventRecord } from "~types/event.ts";
 
-export function getEventStoreDatabase(adapter: Adapter): IndexedDatabase<Collections> | MemoryDatabase<Collections> {
+export function getEventStoreDatabase(adapter: Adapter): EventStoreDB {
   switch (adapter) {
     case "indexedb": {
       return new IndexedDatabase<Collections>({
@@ -17,6 +17,12 @@ export function getEventStoreDatabase(adapter: Adapter): IndexedDatabase<Collect
               ["recorded", { unique: false }],
             ],
           },
+          {
+            name: "contexts",
+            indexes: [
+              ["key", { unique: false }],
+            ],
+          },
         ],
       });
     }
@@ -24,9 +30,8 @@ export function getEventStoreDatabase(adapter: Adapter): IndexedDatabase<Collect
       return new MemoryDatabase<Collections>({
         name,
         registrars: [
-          {
-            name: "events",
-          },
+          { name: "events" },
+          { name: "contexts" },
         ],
       });
     }
@@ -39,6 +44,14 @@ export function getEventStoreDatabase(adapter: Adapter): IndexedDatabase<Collect
  |--------------------------------------------------------------------------------
  */
 
+export type EventStoreDB = IndexedDatabase<Collections> | MemoryDatabase<Collections>;
+
 export type Adapter = "indexedb" | "memorydb";
 
-export type Collections = { events: EventRecord };
+export type Collections = {
+  events: EventRecord;
+  contexts: {
+    key: string;
+    stream: string;
+  };
+};

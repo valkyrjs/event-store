@@ -228,6 +228,16 @@ export type EventHooks<TRecord extends EventRecord> = Partial<{
    * ```
    */
   afterEventError(error: PostEventInsertError, record: TRecord): Promise<void> | void;
+
+  /**
+   * After an event record has been successfully inserted, this hooks will
+   * trigger, allowing for further non internal operations on the inserted
+   * event record.
+   *
+   * @param record   - Record that was inserted.
+   * @param hydrated - Hydrated state of the record.
+   */
+  afterEventInsert(record: TRecord, hydrated: boolean): Promise<void> | void;
 }>;
 
 /*

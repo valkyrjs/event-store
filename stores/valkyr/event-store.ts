@@ -29,22 +29,24 @@
  * ```
  */
 
-import type { Collection, IndexedDatabase, MemoryDatabase } from "@valkyr/db";
+import type { IndexedDatabase } from "@valkyr/db";
 import type { AnyZodObject } from "zod";
 
+import { Contextor } from "~libraries/contextor.ts";
 import { createEventRecord } from "~libraries/event.ts";
 import { Projector } from "~libraries/projector.ts";
 import { makeReducer } from "~libraries/reducer.ts";
-import { getLogicalTimestamp } from "~libraries/time.ts";
 import { Validator } from "~libraries/validator.ts";
+import { pushEventRecord } from "~stores/utilities.ts";
 import type { Unknown } from "~types/common.ts";
 import type { Event, EventRecord, EventStatus, EventToRecord } from "~types/event.ts";
-import type { EventHooks, EventReadOptions, EventStore } from "~types/event-store.ts";
+import type { EventHooks, EventReadOptions, EventStore, Pagination } from "~types/event-store.ts";
 import type { ReduceHandler, Reducer } from "~types/reducer.ts";
 import type { ExcludeEmptyFields } from "~types/utilities.ts";
 
-import { EventInsertionFailure, EventProjectionFailure, EventValidationFailure } from "../../libraries/errors.ts";
 import { type Adapter, type Collections, getEventStoreDatabase } from "./database.ts";
+import { ContextsProvider } from "./providers/contexts.ts";
+import { EventsProvider } from "./providers/events.ts";
 
 /*
  |--------------------------------------------------------------------------------
@@ -58,19 +60,32 @@ import { type Adapter, type Collections, getEventStoreDatabase } from "./databas
  */
 export class ValkyrEventStore<TEvent extends Event, TRecord extends EventRecord = EventToRecord<TEvent>>
   implements EventStore<TEvent, TRecord> {
-  readonly #config: Config<TEvent, TRecord>;
-  readonly #database: IndexedDatabase<Collections> | MemoryDatabase<Collections>;
+  readonly #database: IndexedDatabase<Collections>;
+  readonly #events: EventList<TEvent>;
+  readonly #validators: ValidatorConfig<TEvent>;
+
+  readonly hooks: EventHooks<TRecord>;
+
+  readonly events: EventsProvider;
+  readonly contexts: ContextsProvider;
 
   readonly validator: Validator<TRecord>;
   readonly projector: Projector<TRecord>;
+  readonly contextor: Contextor<TRecord>;
 
   constructor(config: Config<TEvent, TRecord>) {
-    this.#config = config;
+    this.#database = getEventStoreDatabase(config.database) as IndexedDatabase<Collections>;
+    this.#events = config.events;
+    this.#validators = config.validators;
+
+    this.hooks = config.hooks ?? {};
+
+    this.events = new EventsProvider(this.#database.collection("events"));
+    this.contexts = new ContextsProvider(this.#database.collection("contexts"));
 
     this.validator = new Validator<TRecord>();
     this.projector = new Projector<TRecord>();
-
-    this.#database = getEventStoreDatabase(config.database);
+    this.contextor = new Contextor<TRecord>(this.contexts.handle.bind(this.contexts));
   }
 
   /*
@@ -83,13 +98,12 @@ export class ValkyrEventStore<TEvent extends Event, TRecord extends EventRecord 
    * @valkyr/db 'events' collection instance which can be accessed to read events
    * data directly from the persisted event store.
    */
-  get events(): Collection<EventRecord> {
-    // @ts-expect-error Both database instances returns the same collection interface.
-    return this.#database.collection("events");
+  get db(): IndexedDatabase<Collections> {
+    return this.#database;
   }
 
   has(type: TRecord["type"]): boolean {
-    return this.#config.events.has(type);
+    return this.#events.has(type);
   }
 
   /*
@@ -121,42 +135,7 @@ export class ValkyrEventStore<TEvent extends Event, TRecord extends EventRecord 
   }
 
   async push(record: TRecord, hydrated = true): Promise<string> {
-    if (this.#config.events.has(record.type) === false) {
-      throw new Error(`Event '${record.type}' is not registered with the event store!`);
-    }
-
-    const status = await this.getEventStatus(record);
-    if (status.exists === true) {
-      return record.stream;
-    }
-
-    if (hydrated === true) {
-      record.recorded = getLogicalTimestamp();
-    }
-
-    try {
-      await this.validator.validate(record);
-    } catch (error) {
-      throw new EventValidationFailure(error.message);
-    }
-
-    try {
-      await this.events.insertOne(record);
-    } catch (error) {
-      throw new EventInsertionFailure(error.message);
-    }
-
-    try {
-      await this.projector.project(record, { hydrated, outdated: status.outdated });
-    } catch (error) {
-      this.#config.hooks?.afterEventError?.(new EventProjectionFailure(error.message), record);
-    }
-
-    if (hydrated === false) {
-      this.#config.remote.push(record);
-    }
-
-    return record.stream;
+    return pushEventRecord(this as any, record, hydrated);
   }
 
   async pushSequence(_records: { record: TRecord; hydrated?: boolean }[]): Promise<void> {
@@ -169,45 +148,22 @@ export class ValkyrEventStore<TEvent extends Event, TRecord extends EventRecord 
    |--------------------------------------------------------------------------------
    */
 
-  async getEventStatus(record: TRecord): Promise<EventStatus> {
-    const result = await this.events.findOne({ id: record.id });
-    if (result !== undefined) {
+  async getEventStatus(event: TRecord): Promise<EventStatus> {
+    const record = await this.events.getById(event.id);
+    if (record) {
       return { exists: true, outdated: true };
     }
-    return { exists: false, outdated: await this.getOutdatedState(record) };
+    return { exists: false, outdated: await this.events.checkOutdated(event) };
   }
 
-  /**
-   * Check if provided event record is outdated in relation to the events
-   * persisted in the event store instance.
-   *
-   * @param record - Event record to get outdated state for.
-   */
-  async getOutdatedState({ stream, type, created }: TRecord): Promise<boolean> {
-    const count = await this.events.count({
-      stream,
-      type,
-      created: {
-        $gt: created,
-      },
-    });
-    return count > 0;
+  async getEvents(options?: EventReadOptions): Promise<TRecord[]> {
+    return (await this.events.find(options)) as TRecord[];
   }
 
-  async getEvents({ cursor, direction }: EventReadOptions = {}): Promise<TRecord[]> {
-    const filter: any = {};
-    if (cursor !== undefined) {
-      filter.created = {
-        [direction === 1 ? "$gt" : "$lt"]: cursor,
-      };
-    }
-    return (await this.events.find(filter, { sort: { created: 1 } })) as TRecord[];
-  }
-
-  async getStreamState<Reduce extends ReduceHandler>(
+  async getStreamState<TReducer extends ReduceHandler>(
     stream: string,
-    reduce: Reduce,
-  ): Promise<ReturnType<Reduce> | undefined> {
+    reduce: TReducer,
+  ): Promise<ReturnType<TReducer> | undefined> {
     const events = await this.getEventsByStream(stream);
     if (events.length === 0) {
       return undefined;
@@ -215,17 +171,21 @@ export class ValkyrEventStore<TEvent extends Event, TRecord extends EventRecord 
     return reduce(events);
   }
 
-  async getEventsByStream(stream: string, { cursor, direction }: EventReadOptions = {}): Promise<TRecord[]> {
-    const filter: any = {};
-    if (stream !== undefined) {
-      filter.stream = stream;
+  async getEventsByStream(stream: string, options?: EventReadOptions): Promise<TRecord[]> {
+    return (await this.events.getByStream(stream, options)) as TRecord[];
+  }
+
+  /**
+   * Retrieve all events under the given context key.
+   *
+   * @param key - Context key to retrieve events for.
+   */
+  async getEventsByContext(key: string, _?: Pagination): Promise<TRecord[]> {
+    const rows = await this.contexts.getByKey(key);
+    if (rows.length === 0) {
+      return [];
     }
-    if (cursor !== undefined) {
-      filter.created = {
-        [direction === 1 ? "$gt" : "$lt"]: cursor,
-      };
-    }
-    return (await this.events.find(filter, { sort: { created: 1 } })) as TRecord[];
+    return (await this.events.getByStreams(rows.map((row) => row.stream))) as TRecord[];
   }
 
   /*
@@ -240,8 +200,14 @@ export class ValkyrEventStore<TEvent extends Event, TRecord extends EventRecord 
    *
    * @param type - Event to get validator for.
    */
-  getValidator(type: TRecord["type"]): AnyZodObject {
-    return this.#config.validators.get(type)!;
+  getValidator(type: TRecord["type"]): {
+    data?: AnyZodObject;
+    meta?: AnyZodObject;
+  } {
+    return {
+      data: this.#validators.data.get(type),
+      meta: this.#validators.meta.get(type),
+    };
   }
 }
 
@@ -254,11 +220,13 @@ export class ValkyrEventStore<TEvent extends Event, TRecord extends EventRecord 
 type Config<TEvent extends Event, TRecord extends EventRecord> = {
   database: Adapter;
   events: EventList<TEvent>;
-  validators: Map<TRecord["type"], AnyZodObject>;
+  validators: ValidatorConfig<TEvent>;
   hooks?: EventHooks<TRecord>;
-  remote: {
-    push: (record: TRecord) => Promise<void>;
-  };
+};
+
+type ValidatorConfig<TEvent extends Event> = {
+  data: Map<TEvent["type"], AnyZodObject>;
+  meta: Map<TEvent["type"], AnyZodObject>;
 };
 
 type EventList<E extends Event> = Set<E["type"]>;

@@ -6,6 +6,7 @@ import {
   EventValidationFailure,
 } from "~libraries/errors.ts";
 import { getLogicalTimestamp } from "~libraries/time.ts";
+import { ValkyrEventStore } from "~stores/valkyr/event-store.ts";
 import type { EventStatus } from "~types/event.ts";
 
 import type { PGEventStore } from "./pg/event-store.ts";
@@ -60,7 +61,7 @@ export async function pushEventRecordSequence(
  * @param hydrated - Whether the record is hydrated or not.
  */
 export async function pushEventRecord(
-  store: PGEventStore<any> | SQLiteEventStore<any>,
+  store: PGEventStore<any> | SQLiteEventStore<any> | ValkyrEventStore<any>,
   record: any,
   hydrated: boolean,
 ): Promise<string> {
@@ -85,7 +86,7 @@ export async function pushEventRecord(
 }
 
 async function validateEventRecord(
-  store: PGEventStore<any> | SQLiteEventStore<any>,
+  store: PGEventStore<any> | SQLiteEventStore<any> | ValkyrEventStore<any>,
   record: any,
 ) {
   const { data, meta } = store.getValidator(record.type);
@@ -127,12 +128,16 @@ async function validateEventRecord(
 }
 
 async function insertEventRecord(
-  store: PGEventStore<any> | SQLiteEventStore<any>,
+  store: PGEventStore<any> | SQLiteEventStore<any> | ValkyrEventStore<any>,
   record: any,
   tx?: any,
 ): Promise<void> {
   try {
-    await store.events.insert(record, tx);
+    if (store instanceof ValkyrEventStore) {
+      await store.events.insert(record);
+    } else {
+      await store.events.insert(record, tx);
+    }
   } catch (error) {
     const eventError = new EventInsertionFailure(error.message);
     if (store.hooks?.beforeEventError !== undefined) {
@@ -143,13 +148,15 @@ async function insertEventRecord(
 }
 
 async function pushEventRecordUpdates(
-  store: PGEventStore<any> | SQLiteEventStore<any>,
+  store: PGEventStore<any> | SQLiteEventStore<any> | ValkyrEventStore<any>,
   record: any,
   hydrated: boolean,
   status: EventStatus,
 ) {
   try {
-    await store.contextor.push(record);
+    if ("contextor" in store) {
+      await store.contextor.push(record);
+    }
   } catch (error) {
     store.hooks?.afterEventError?.(new EventContextFailure(error.message), record);
   }
@@ -159,4 +166,6 @@ async function pushEventRecordUpdates(
   } catch (error) {
     store.hooks?.afterEventError?.(new EventProjectionFailure(error.message), record);
   }
+
+  store.hooks?.afterEventInsert?.(record, hydrated);
 }

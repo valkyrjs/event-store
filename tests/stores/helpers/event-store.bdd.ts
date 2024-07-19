@@ -5,6 +5,7 @@ import { describe, it } from "std/testing/bdd.ts";
 import { EventDataValidationFailure, EventInsertionFailure, EventValidationFailure } from "~libraries/errors.ts";
 import type { PGEventStore } from "~stores/pg/event-store.ts";
 import type { SQLiteEventStore } from "~stores/sqlite/event-store.ts";
+import type { ValkyrEventStore } from "~stores/valkyr/event-store.ts";
 import type { EventHooks } from "~types/event-store.ts";
 
 import { CustomServiceError } from "../mocks/errors.ts";
@@ -14,7 +15,8 @@ import { getUserReducer } from "../mocks/user-reducer.ts";
 export function testEventStoreMethods(
   getEventStore: (
     hooks?: EventHooks<EventRecord>,
-  ) => Promise<PGEventStore<Event> | SQLiteEventStore<Event>>,
+  ) => Promise<PGEventStore<Event> | SQLiteEventStore<Event> | ValkyrEventStore<Event>>,
+  options: { skipSequence: boolean } = { skipSequence: false },
 ) {
   describe(".add", () => {
     it("should throw a 'EventValidationFailure' on data validation error", async () => {
@@ -335,104 +337,106 @@ export function testEventStoreMethods(
     });
   });
 
-  describe(".addSequence", () => {
-    it("should insert 'user:created', 'user:given_name_set', and 'user:email_set' in a sequence of events", async () => {
-      const store = await getEventStore();
-      const stream = nanoid();
+  if (options.skipSequence === false) {
+    describe(".addSequence", () => {
+      it("should insert 'user:created', 'user:given_name_set', and 'user:email_set' in a sequence of events", async () => {
+        const store = await getEventStore();
+        const stream = nanoid();
 
-      const events = [
-        {
-          stream,
-          type: "user:created",
-          data: {
-            name: {
-              given: "Jane",
-              family: "Doe",
+        const events = [
+          {
+            stream,
+            type: "user:created",
+            data: {
+              name: {
+                given: "Jane",
+                family: "Doe",
+              },
+              email: "jane.doe@fixture.none",
             },
-            email: "jane.doe@fixture.none",
-          },
-        } as const,
-        {
-          stream,
-          type: "user:given_name_set",
-          data: {
-            given: "John",
-          },
-        } as const,
-        {
-          stream,
-          type: "user:email_set",
-          data: {
-            email: "john@doe.com",
-          },
-          meta: {
-            auditor: "admin",
-          },
-        } as const,
-      ];
+          } as const,
+          {
+            stream,
+            type: "user:given_name_set",
+            data: {
+              given: "John",
+            },
+          } as const,
+          {
+            stream,
+            type: "user:email_set",
+            data: {
+              email: "john@doe.com",
+            },
+            meta: {
+              auditor: "admin",
+            },
+          } as const,
+        ];
 
-      await store.addSequence(events);
+        await store.addSequence(events);
 
-      const records = await store.getEventsByStream(stream);
+        const records = await store.getEventsByStream(stream);
 
-      assertEquals(records.length, 3);
+        assertEquals(records.length, 3);
 
-      records.forEach((record, index) => {
-        assertObjectMatch(record, events[index]);
+        records.forEach((record, index) => {
+          assertObjectMatch(record, events[index]);
+        });
+
+        const state = await store.getStreamState(stream, getUserReducer(store));
+
+        assertEquals(state?.name.given, "John");
+        assertEquals(state?.email, "john@doe.com");
       });
 
-      const state = await store.getStreamState(stream, getUserReducer(store));
+      it("should not commit any events when insert fails", async () => {
+        const store = await getEventStore();
+        const stream = nanoid();
 
-      assertEquals(state?.name.given, "John");
-      assertEquals(state?.email, "john@doe.com");
-    });
-
-    it("should not commit any events when insert fails", async () => {
-      const store = await getEventStore();
-      const stream = nanoid();
-
-      const events = [
-        {
-          stream,
-          type: "user:created",
-          data: {
-            name: {
-              given: "Jane",
-              family: "Doe",
+        const events = [
+          {
+            stream,
+            type: "user:created",
+            data: {
+              name: {
+                given: "Jane",
+                family: "Doe",
+              },
+              email: "jane.doe@fixture.none",
             },
-            email: "jane.doe@fixture.none",
-          },
-        } as const,
-        {
-          stream,
-          type: "user:given_name_set",
-          data: {
-            givens: "John",
-          },
-        } as any,
-        {
-          stream,
-          type: "user:email_set",
-          data: {
-            email: "john@doe.com",
-          },
-          meta: {
-            auditor: "admin",
-          },
-        } as const,
-      ];
+          } as const,
+          {
+            stream,
+            type: "user:given_name_set",
+            data: {
+              givens: "John",
+            },
+          } as any,
+          {
+            stream,
+            type: "user:email_set",
+            data: {
+              email: "john@doe.com",
+            },
+            meta: {
+              auditor: "admin",
+            },
+          } as const,
+        ];
 
-      assertRejects(
-        async () => store.addSequence(events),
-        EventDataValidationFailure,
-        new EventDataValidationFailure({}).message,
-      );
+        assertRejects(
+          async () => store.addSequence(events),
+          EventDataValidationFailure,
+          new EventDataValidationFailure({}).message,
+        );
 
-      const records = await store.getEventsByStream(stream);
+        const records = await store.getEventsByStream(stream);
 
-      assertEquals(records.length, 0);
+        assertEquals(records.length, 0);
+      });
     });
-  });
+  }
 
   describe(".reducer", () => {
     it("should create a 'user' reducer and reject a 'user:email_set' event", async () => {
