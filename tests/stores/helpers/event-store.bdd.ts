@@ -509,7 +509,7 @@ export function testEventStoreMethods(
     });
   });
 
-  describe.only(".createSnapshot", () => {
+  describe(".createSnapshot", () => {
     it("should create a new snapshot", async () => {
       const store = await getEventStore();
       const stream = nanoid();
