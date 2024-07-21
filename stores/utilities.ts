@@ -26,7 +26,7 @@ export async function pushEventRecordSequence(
   }[] = [];
 
   for (const { record, hydrated } of records) {
-    if (store.has(record.type) === false) {
+    if (store.hasEvent(record.type) === false) {
       throw new Error(`Event '${record.type}' is not registered with the event store!`);
     }
     const status = await store.getEventStatus(record);
@@ -65,7 +65,7 @@ export async function pushEventRecord(
   record: any,
   hydrated: boolean,
 ): Promise<string> {
-  if (store.has(record.type) === false) {
+  if (store.hasEvent(record.type) === false) {
     throw new Error(`Event '${record.type}' is not registered with the event store!`);
   }
 

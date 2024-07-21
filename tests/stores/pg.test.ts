@@ -5,7 +5,7 @@ import postgres from "postgres";
 import { afterAll, afterEach, beforeAll, describe } from "std/testing/bdd.ts";
 
 import { migrate, PGEventStore } from "~stores/pg/event-store.ts";
-import type { EventHooks } from "~types/event-store.ts";
+import type { EventStoreHooks } from "~types/event-store.ts";
 
 import { testEventStoreMethods } from "./helpers/event-store.bdd.ts";
 import { type Event, type EventRecord, events, validators } from "./mocks/events.ts";
@@ -42,7 +42,7 @@ afterAll(async () => {
  */
 
 describe("PGEventStore", () => {
-  testEventStoreMethods(async (hooks?: EventHooks<EventRecord>) => getEventStore(container.url(DB_NAME), hooks));
+  testEventStoreMethods(async (hooks?: EventStoreHooks<EventRecord>) => getEventStore(container.url(DB_NAME), hooks));
 });
 
 /*
@@ -51,7 +51,7 @@ describe("PGEventStore", () => {
  |--------------------------------------------------------------------------------
  */
 
-async function getEventStore(databaseUrl: string, hooks: EventHooks<EventRecord> = {}) {
+async function getEventStore(databaseUrl: string, hooks: EventStoreHooks<EventRecord> = {}) {
   return new PGEventStore<Event>({
     database: () => postgres(databaseUrl),
     events,

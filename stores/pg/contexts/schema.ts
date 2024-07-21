@@ -2,14 +2,14 @@ import { index, type PgColumn, type PgTableWithColumns, varchar } from "drizzle-
 
 import { schema } from "../schema.ts";
 
-export const contexts: ContextTable = schema.table("contexts", {
+export const contexts: Table = schema.table("contexts", {
   key: varchar("key").notNull(),
   stream: varchar("stream").notNull(),
 }, (table) => ({
-  keyIdx: index("key_idx").on(table.key),
+  keyIdx: index().on(table.key),
 }));
 
-type ContextTable = PgTableWithColumns<{
+type Table = PgTableWithColumns<{
   name: "contexts";
   schema: "event_store";
   columns: {

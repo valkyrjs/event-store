@@ -1,12 +1,12 @@
 import { nanoid } from "nanoid";
-import { assertEquals, assertObjectMatch, assertRejects } from "std/assert/mod.ts";
+import { assertEquals, assertNotEquals, assertObjectMatch, assertRejects } from "std/assert/mod.ts";
 import { describe, it } from "std/testing/bdd.ts";
 
 import { EventDataValidationFailure, EventInsertionFailure, EventValidationFailure } from "~libraries/errors.ts";
 import type { PGEventStore } from "~stores/pg/event-store.ts";
 import type { SQLiteEventStore } from "~stores/sqlite/event-store.ts";
 import type { ValkyrEventStore } from "~stores/valkyr/event-store.ts";
-import type { EventHooks } from "~types/event-store.ts";
+import type { EventStoreHooks } from "~types/event-store.ts";
 
 import { CustomServiceError } from "../mocks/errors.ts";
 import type { Event, EventRecord } from "../mocks/events.ts";
@@ -14,17 +14,17 @@ import { getUserReducer } from "../mocks/user-reducer.ts";
 
 export function testEventStoreMethods(
   getEventStore: (
-    hooks?: EventHooks<EventRecord>,
+    hooks?: EventStoreHooks<EventRecord>,
   ) => Promise<PGEventStore<Event> | SQLiteEventStore<Event> | ValkyrEventStore<Event>>,
   options: { skipSequence: boolean } = { skipSequence: false },
 ) {
-  describe(".add", () => {
+  describe(".addEvent", () => {
     it("should throw a 'EventValidationFailure' on data validation error", async () => {
       const store = await getEventStore();
 
       assertRejects(
         async () =>
-          store.add({
+          store.addEvent({
             type: "user:created",
             data: {
               name: {
@@ -48,7 +48,7 @@ export function testEventStoreMethods(
 
       assertRejects(
         async () =>
-          store.add({
+          store.addEvent({
             type: "user:created",
             data: {
               name: {
@@ -72,7 +72,7 @@ export function testEventStoreMethods(
 
       assertRejects(
         async () =>
-          store.add({
+          store.addEvent({
             type: "user:created",
             data: {
               name: {
@@ -100,7 +100,7 @@ export function testEventStoreMethods(
 
       assertRejects(
         async () =>
-          store.add({
+          store.addEvent({
             type: "user:created",
             data: {
               name: {
@@ -124,7 +124,7 @@ export function testEventStoreMethods(
 
       assertRejects(
         async () =>
-          store.add({
+          store.addEvent({
             type: "user:created",
             data: {
               name: {
@@ -152,7 +152,7 @@ export function testEventStoreMethods(
 
       assertRejects(
         async () =>
-          store.add({
+          store.addEvent({
             type: "user:created",
             data: {
               name: {
@@ -187,7 +187,7 @@ export function testEventStoreMethods(
         projectedResult = `${record.data.name.given} ${record.data.name.family} | ${record.data.email}`;
       });
 
-      const stream = await store.add(event);
+      const stream = await store.addEvent(event);
 
       assertObjectMatch(await store.events.getByStream(stream).then((rows) => rows[0]), event);
       assertEquals(projectedResult, "John Doe | john.doe@fixture.none");
@@ -211,7 +211,7 @@ export function testEventStoreMethods(
         projectedResult = record.data.meta.foo;
       });
 
-      const stream = await store.add(event);
+      const stream = await store.addEvent(event);
 
       assertObjectMatch(await store.events.getByStream(stream).then((rows) => rows[0]), event);
       assertEquals(projectedResult, "bar");
@@ -235,7 +235,7 @@ export function testEventStoreMethods(
         throw new Error();
       });
 
-      const stream = await store.add(event);
+      const stream = await store.addEvent(event);
 
       assertObjectMatch(await store.events.getByStream(stream).then((rows) => rows[0]), event);
     });
@@ -264,7 +264,7 @@ export function testEventStoreMethods(
         throw new Error(record.data.email);
       });
 
-      const stream = await store.add(event);
+      const stream = await store.addEvent(event);
 
       assertObjectMatch(await store.events.getByStream(stream).then((rows) => rows[0]), event);
       assertEquals(projectionErrorLog, "user:created | john.doe@fixture.none");
@@ -280,7 +280,7 @@ export function testEventStoreMethods(
         },
       ]);
 
-      await store.add({
+      await store.addEvent({
         type: "user:created",
         data: {
           name: {
@@ -295,7 +295,7 @@ export function testEventStoreMethods(
 
       assertEquals(res1.length, 1);
 
-      await store.add({
+      await store.addEvent({
         type: "user:created",
         data: {
           name: {
@@ -328,7 +328,7 @@ export function testEventStoreMethods(
         },
       ]);
 
-      await store.add({
+      await store.addEvent({
         stream: "user-1",
         type: "user:created",
         data: {
@@ -344,7 +344,7 @@ export function testEventStoreMethods(
 
       assertEquals(res1.length, 1);
 
-      await store.add({
+      await store.addEvent({
         stream: "user-1",
         type: "user:email_set",
         data: {
@@ -398,7 +398,7 @@ export function testEventStoreMethods(
           } as const,
         ];
 
-        await store.addSequence(events);
+        await store.addEventSequence(events);
 
         const records = await store.getEventsByStream(stream);
 
@@ -408,7 +408,7 @@ export function testEventStoreMethods(
           assertObjectMatch(record, events[index]);
         });
 
-        const state = await store.getStreamState(stream, getUserReducer(store));
+        const state = await store.reduce(stream, getUserReducer(store));
 
         assertEquals(state?.name.given, "John");
         assertEquals(state?.email, "john@doe.com");
@@ -450,7 +450,7 @@ export function testEventStoreMethods(
         ];
 
         assertRejects(
-          async () => store.addSequence(events),
+          async () => store.addEventSequence(events),
           EventDataValidationFailure,
           new EventDataValidationFailure({}).message,
         );
@@ -462,7 +462,7 @@ export function testEventStoreMethods(
     });
   }
 
-  describe(".reducer", () => {
+  describe(".makeReducer", () => {
     it("should create a 'user' reducer and reject a 'user:email_set' event", async () => {
       const store = await getEventStore();
       const stream = nanoid();
@@ -470,7 +470,7 @@ export function testEventStoreMethods(
       const userReducer = getUserReducer(store);
 
       store.validator.on("user:email_set", async (record) => {
-        const user = await store.getStreamState(stream, userReducer);
+        const user = await store.reduce(stream, userReducer);
         if (user === undefined) {
           throw new Error("Event stream does not exist");
         }
@@ -479,7 +479,7 @@ export function testEventStoreMethods(
         }
       });
 
-      await store.add({
+      await store.addEvent({
         stream,
         type: "user:created",
         data: {
@@ -493,7 +493,7 @@ export function testEventStoreMethods(
 
       assertRejects(
         async () =>
-          await store.add({
+          await store.addEvent({
             stream,
             type: "user:email_set",
             data: {
@@ -506,6 +506,79 @@ export function testEventStoreMethods(
         EventValidationFailure,
         "Email has not changed",
       );
+    });
+  });
+
+  describe.only(".createSnapshot", () => {
+    it("should create a new snapshot", async () => {
+      const store = await getEventStore();
+      const stream = nanoid();
+      const reducer = getUserReducer(store);
+
+      await store.addEvent({
+        stream,
+        type: "user:created",
+        data: {
+          name: {
+            given: "John",
+            family: "Doe",
+          },
+          email: "john.doe@fixture.none",
+        },
+      });
+
+      await store.addEvent({
+        stream,
+        type: "user:email_set",
+        data: {
+          email: "jane.doe@fixture.none",
+        },
+        meta: {
+          auditor: "super",
+        },
+      });
+
+      await store.addEvent({
+        stream,
+        type: "user:deactivated",
+      });
+
+      await store.createSnapshot(stream, reducer);
+
+      const snapshot = await store.snapshots.getByStream(reducer.name, stream);
+
+      assertNotEquals(snapshot, undefined);
+      assertObjectMatch(snapshot!.state, {
+        name: {
+          given: "John",
+          family: "Doe",
+        },
+        email: "jane.doe@fixture.none",
+        active: false,
+      });
+
+      await store.addEvent({
+        stream,
+        type: "user:activated",
+        meta: {
+          auditor: "super",
+        },
+      });
+
+      const events = await store.events.getByStream(stream, { cursor: snapshot!.cursor });
+
+      assertEquals(events.length, 1);
+
+      const state = await store.reduce(stream, reducer);
+
+      assertObjectMatch(state, {
+        name: {
+          given: "John",
+          family: "Doe",
+        },
+        email: "jane.doe@fixture.none",
+        active: true,
+      });
     });
   });
 }

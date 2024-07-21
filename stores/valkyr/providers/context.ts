@@ -1,16 +1,18 @@
 import type { Collection } from "@valkyr/db";
 
-import type { Context } from "~types/context.ts";
+import type { Context as Operation } from "~types/context.ts";
 
-export class ContextsProvider {
-  constructor(readonly contexts: Collection<{ key: string; stream: string }>) {}
+import type { Context } from "../database.ts";
+
+export class ContextProvider {
+  constructor(readonly contexts: Collection<Context>) {}
 
   /**
    * Handle incoming context operations.
    *
    * @param contexts - List of context operations to execute.
    */
-  async handle(contexts: Context[]): Promise<void> {
+  async handle(contexts: Operation[]): Promise<void> {
     for (const context of contexts) {
       if (context.op === "insert") {
         await this.insert(context.key, context.stream);
@@ -36,7 +38,7 @@ export class ContextsProvider {
    *
    * @param key - Context key to get event streams for.
    */
-  async getByKey(key: string): Promise<{ stream: string; key: string }[]> {
+  async getByKey(key: string): Promise<Context[]> {
     return this.contexts.find({ key });
   }
 

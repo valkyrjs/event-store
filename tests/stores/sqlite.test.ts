@@ -4,7 +4,7 @@ import { Database } from "sqlite";
 import { afterAll, describe } from "std/testing/bdd.ts";
 
 import { migrate, SQLiteEventStore } from "~stores/sqlite/event-store.ts";
-import type { EventHooks } from "~types/event-store.ts";
+import type { EventStoreHooks } from "~types/event-store.ts";
 
 import { testEventStoreMethods } from "./helpers/event-store.bdd.ts";
 import { type Event, type EventRecord, events, validators } from "./mocks/events.ts";
@@ -28,7 +28,7 @@ afterAll(async () => {
  */
 
 describe("SQLiteEventStore", () => {
-  testEventStoreMethods(async (hooks?: EventHooks<EventRecord>) => getEventStore(hooks));
+  testEventStoreMethods(async (hooks?: EventStoreHooks<EventRecord>) => getEventStore(hooks));
 });
 
 /*
@@ -37,7 +37,7 @@ describe("SQLiteEventStore", () => {
  |--------------------------------------------------------------------------------
  */
 
-async function getEventStore(hooks?: EventHooks<EventRecord>) {
+async function getEventStore(hooks?: EventStoreHooks<EventRecord>) {
   const database = new Database(":memory:");
   const store = new SQLiteEventStore<Event>({
     database: () => database,

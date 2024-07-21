@@ -1,13 +1,13 @@
 import { index, type SQLiteColumn, sqliteTable, type SQLiteTableWithColumns, text } from "drizzle-orm/sqlite-core";
 
-export const contexts: ContextTable = sqliteTable("valkyr_contexts", {
+export const contexts: Table = sqliteTable("valkyr_contexts", {
   key: text("key").notNull(),
   stream: text("stream").notNull(),
 }, (table) => ({
-  keyIdx: index("key_idx").on(table.key),
+  keyIdx: index("valkyr_contexts_key_idx").on(table.key),
 }));
 
-type ContextTable = SQLiteTableWithColumns<{
+type Table = SQLiteTableWithColumns<{
   name: "valkyr_contexts";
   schema: undefined;
   columns: {

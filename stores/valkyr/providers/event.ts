@@ -1,8 +1,9 @@
 import type { Collection } from "@valkyr/db";
 
 import type { EventRecord } from "~types/event.ts";
+import type { EventReadOptions } from "~types/event-store.ts";
 
-export class EventsProvider {
+export class EventProvider {
   constructor(readonly events: Collection<EventRecord>) {}
 
   /**
@@ -25,7 +26,7 @@ export class EventsProvider {
     const filter: any = {};
     if (cursor !== undefined) {
       filter.created = {
-        [direction === 1 ? "$gt" : "$lt"]: cursor,
+        [direction === "desc" ? "$lt" : "$gt"]: cursor,
       };
     }
     return this.events.find(filter, { sort: { created: 1 } });
@@ -38,7 +39,7 @@ export class EventsProvider {
     }
     if (cursor !== undefined) {
       filter.created = {
-        [direction === 1 ? "$gt" : "$lt"]: cursor,
+        [direction === "desc" ? "$lt" : "$gt"]: cursor,
       };
     }
     return this.events.find(filter, { sort: { created: 1 } });
@@ -63,16 +64,3 @@ export class EventsProvider {
     return count > 0;
   }
 }
-
-type EventReadOptions = {
-  /**
-   * Fetch events from a specific point in time. The direction of which
-   * events are fetched is determined by the direction option.
-   */
-  cursor?: string;
-
-  /**
-   * Fetch events in ascending or descending order.
-   */
-  direction?: 1 | -1;
-};

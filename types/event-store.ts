@@ -2,77 +2,32 @@ import type { PostEventInsertError, PreEventInsertError } from "~libraries/error
 
 import type { Unknown } from "./common.ts";
 import type { Event, EventRecord, EventStatus } from "./event.ts";
-import type { ReduceHandler, Reducer } from "./reducer.ts";
+import type { InferReducerState, Reducer, ReducerConfig, ReducerLeftFold } from "./reducer.ts";
 import type { ExcludeEmptyFields } from "./utilities.ts";
 
-/*
- |--------------------------------------------------------------------------------
- | Event Store
- |--------------------------------------------------------------------------------
- */
-
 export type EventStore<TEvent extends Event, TRecord extends EventRecord> = {
+  /*
+   |--------------------------------------------------------------------------------
+   | Events
+   |--------------------------------------------------------------------------------
+   */
+
   /**
-   * Check if the event store has an even of given type.
+   * Check if the event store has an event of the given type.
    *
    * @param type - Event type to check for.
    */
-  has(type: TEvent["type"]): boolean;
-
-  /*
-   |--------------------------------------------------------------------------------
-   | Factories
-   |--------------------------------------------------------------------------------
-   */
+  hasEvent(type: TEvent["type"]): boolean;
 
   /**
-   * Make a new event reducer based on the events registered with the event store.
-   *
-   * @param reducer - Reducer method to run over given events.
-   * @param state   - Initial state.
-   *
-   * @example
-   *
-   * ```ts
-   * const getFooState = eventStore.reducer<{ name: string }>((event, state) => {
-   *   switch (event.type) {
-   *     case "FooCreated": {
-   *       state.name = event.data.name;
-   *       return state;
-   *     }
-   *   }
-   *   return state;
-   * }, {
-   *   name: ""
-   * });
-   *
-   * // ### Solution 1
-   *
-   * const events = await eventStore.getEventsByStream("xyz");
-   * const foo = getFooState(events);
-   *
-   * // ### Solution 2
-   *
-   * const foo = await eventStore.getStreamState("xyz", getFooState);
-   * ```
-   */
-  reducer<TState extends Unknown>(reducer: Reducer<TState, TRecord>, state: TState): ReduceHandler<TState, TRecord>;
-
-  /*
-   |--------------------------------------------------------------------------------
-   | Writers
-   |--------------------------------------------------------------------------------
-   */
-
-  /**
-   * Push a new event onto the local event store database.
+   * Add a new event onto the local event store database.
    *
    * Push is meant to take events from the local services and insert them as new
    * event records as non hydrated events.
    *
    * @param event - Event data to record.
    */
-  add<TEventType extends Event["type"]>(
+  addEvent<TEventType extends Event["type"]>(
     event: ExcludeEmptyFields<Extract<TEvent, { type: TEventType }>> & { stream?: string },
   ): Promise<string>;
 
@@ -82,7 +37,7 @@ export type EventStore<TEvent extends Event, TRecord extends EventRecord> = {
    *
    * @param events - List of events to process.
    */
-  addSequence<TEventType extends Event["type"]>(
+  addEventSequence<TEventType extends Event["type"]>(
     event: (ExcludeEmptyFields<Extract<TEvent, { type: TEventType }>> & { stream?: string })[],
   ): Promise<void>;
 
@@ -100,7 +55,7 @@ export type EventStore<TEvent extends Event, TRecord extends EventRecord> = {
    * @param record   - EventRecord to insert.
    * @param hydrated - Whether the event is hydrated or not. (Optional)
    */
-  push(record: TRecord, hydrated?: boolean): Promise<string>;
+  pushEvent(record: TRecord, hydrated?: boolean): Promise<string>;
 
   /**
    * Insert multiple event records sequentially to the local event store database.
@@ -111,13 +66,7 @@ export type EventStore<TEvent extends Event, TRecord extends EventRecord> = {
    *
    * @param records - List of event records to process.
    */
-  pushSequence(records: { record: TRecord; hydrated?: boolean }[]): Promise<void>;
-
-  /*
-   |--------------------------------------------------------------------------------
-   | Readers
-   |--------------------------------------------------------------------------------
-   */
+  pushEventSequence(records: { record: TRecord; hydrated?: boolean }[]): Promise<void>;
 
   /**
    * Enable the ability to check an incoming events status in relation to the local
@@ -146,29 +95,108 @@ export type EventStore<TEvent extends Event, TRecord extends EventRecord> = {
   getEvents(options?: EventReadOptions): Promise<TRecord[]>;
 
   /**
-   * An event reducer aims to create an aggregate state that is as close to up to
-   * date as possible. This is handy when we want to performthings such as business
-   * logic on the command/action layer of the event creation lifecycle.
-   *
-   * By default the state is as close as possible since we are operating in a
-   * distributed system without a central authority or sequential event bus. As such
-   * developers is advised to build with failure at a later date as an option.
-   *
-   * This method operates by pulling all the latest known events of an event stream
-   * and reduces them into a single current state representing of the event stream.
-   */
-  getStreamState<TReducer extends ReduceHandler>(
-    stream: string,
-    reduce: TReducer,
-  ): Promise<ReturnType<TReducer> | undefined>;
-
-  /**
    * Retrieve events from the events table under the given stream.
    *
    * @param stream  - Stream to retrieve events for.
    * @param options - Stream logic options. (Optional)
    */
   getEventsByStream(stream: string, options?: EventReadOptions): Promise<TRecord[]>;
+
+  /**
+   * Retrieve all events under the given context key.
+   *
+   * @param key - Context key to retrieve events for.
+   */
+  getEventsByContext(key: string, _?: Pagination): Promise<TRecord[]>;
+
+  /*
+   |--------------------------------------------------------------------------------
+   | Reducers
+   |--------------------------------------------------------------------------------
+   */
+
+  /**
+   * Make a new event reducer based on the events registered with the event store.
+   *
+   * @param reducer - Reducer method to run over given events.
+   * @param state   - Initial state.
+   *
+   * @example
+   * ```ts
+   * const fooReducer = eventStore.makeReducer<FooState>((state, event) => {
+   *   switch (event.type) {
+   *     case "FooCreated": {
+   *       state.name = event.data.name;
+   *       return state;
+   *     }
+   *   }
+   *   return state;
+   * }, {
+   *   name: ""
+   * });
+   *
+   * type FooState = { name: string };
+   *
+   * const foo = await eventStore.reduce("stream-id", fooReducer);
+   * ```
+   */
+  makeReducer<TState extends Unknown>(
+    folder: ReducerLeftFold<TState, TRecord>,
+    config: ReducerConfig<TState>,
+  ): Reducer<TState, TRecord>;
+
+  /**
+   * Reduce events in the given stream to a entity state.
+   *
+   * @param stream - Stream to get events from.
+   * @param reduce - Reducer method to generate state from.
+   *
+   * @example
+   * ```ts
+   * const foo = await eventStore.reduce("stream-id", fooReducer);
+   * ```
+   *
+   * Reducers are created through the `.makeReducer` method.
+   */
+  reduce<TReducer extends Reducer>(
+    stream: string,
+    reducer: TReducer,
+  ): Promise<ReturnType<TReducer["reduce"]> | undefined>;
+
+  /*
+   |--------------------------------------------------------------------------------
+   | Snapshots
+   |--------------------------------------------------------------------------------
+   */
+
+  /**
+   * Create a new snapshot for the given stream and reducer.
+   *
+   * @param stream - Stream to create a snapshot from.
+   * @param reduce - Reducer method to create the snapshot state from.
+   */
+  createSnapshot<TReducer extends Reducer>(stream: string, reduce: TReducer): Promise<void>;
+
+  /**
+   * Get an entity state snapshot from the database. These are useful for when we
+   * want to reduce the amount of events that has to be processed when fetching
+   * state history for a reducer.
+   *
+   * @param name   - Name of the snapshot, unique to the reducer used.
+   * @param stream - Stream to get snapshot for.
+   */
+  getSnapshot<TReducer extends Reducer, TState = InferReducerState<TReducer>>(
+    stream: string,
+    reducer: TReducer,
+  ): Promise<{ cursor: string; state: TState } | undefined>;
+
+  /**
+   * Delete a snapshot.
+   *
+   * @param reducer - Name of the snapshot, unique to the reducer used.
+   * @param stream  - Stream to delete snapshot for.
+   */
+  deleteSnapshot<TReducer extends Reducer>(stream: string, reducer: TReducer): Promise<void>;
 };
 
 /*
@@ -177,7 +205,7 @@ export type EventStore<TEvent extends Event, TRecord extends EventRecord> = {
  |--------------------------------------------------------------------------------
  */
 
-export type EventHooks<TRecord extends EventRecord> = Partial<{
+export type EventStoreHooks<TRecord extends EventRecord> = Partial<{
   /**
    * Before an error is thrown, this hook allows for customizing the error that
    * is thrown. This is useful for when you want to throw a different error that
@@ -254,9 +282,9 @@ export type EventReadOptions = {
   cursor?: string;
 
   /**
-   * Fetch events in ascending or descending order.
+   * Fetch events in ascending or descending order. Default: "asc"
    */
-  direction?: 1 | -1;
+  direction?: "asc" | "desc";
 };
 
 export type Pagination = CursorPagination | OffsetPagination;

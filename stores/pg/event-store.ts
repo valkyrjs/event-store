@@ -40,8 +40,8 @@ import { makeReducer } from "~libraries/reducer.ts";
 import { Validator } from "~libraries/validator.ts";
 import type { Unknown } from "~types/common.ts";
 import type { Event, EventRecord, EventStatus, EventToRecord } from "~types/event.ts";
-import type { EventHooks, EventReadOptions, EventStore, Pagination } from "~types/event-store.ts";
-import type { ReduceHandler, Reducer } from "~types/reducer.ts";
+import type { EventReadOptions, EventStore, EventStoreHooks, Pagination } from "~types/event-store.ts";
+import type { InferReducerState, Reducer, ReducerConfig, ReducerLeftFold } from "~types/reducer.ts";
 import type { ExcludeEmptyFields } from "~types/utilities.ts";
 import { Database } from "~utilities/database.ts";
 
@@ -50,6 +50,7 @@ import { ContextProvider } from "./contexts/provider.ts";
 import type { EventStoreDB } from "./database.ts";
 import { schema } from "./database.ts";
 import { EventProvider } from "./events/provider.ts";
+import { SnapshotProvider } from "./snapshots/provider.ts";
 
 export { migrate } from "./database.ts";
 
@@ -69,10 +70,11 @@ export class PGEventStore<TEvent extends Event, TRecord extends EventRecord = Ev
   readonly #events: EventList<TEvent>;
   readonly #validators: ValidatorConfig<TEvent>;
 
-  readonly hooks: EventHooks<TRecord>;
+  readonly hooks: EventStoreHooks<TRecord>;
 
   readonly contexts: ContextProvider;
   readonly events: EventProvider;
+  readonly snapshots: SnapshotProvider;
 
   readonly validator: Validator<TRecord>;
   readonly projector: Projector<TRecord>;
@@ -91,6 +93,7 @@ export class PGEventStore<TEvent extends Event, TRecord extends EventRecord = Ev
 
     this.contexts = new ContextProvider(this.#database);
     this.events = new EventProvider(this.#database);
+    this.snapshots = new SnapshotProvider(this.#database);
 
     this.validator = new Validator<TRecord>();
     this.projector = new Projector<TRecord>();
@@ -110,47 +113,37 @@ export class PGEventStore<TEvent extends Event, TRecord extends EventRecord = Ev
     return this.#database.instance;
   }
 
-  has(type: TRecord["type"]): boolean {
+  /*
+   |--------------------------------------------------------------------------------
+   | Events
+   |--------------------------------------------------------------------------------
+   */
+
+  hasEvent(type: TRecord["type"]): boolean {
     return this.#events.has(type);
   }
 
-  /*
-   |--------------------------------------------------------------------------------
-   | Factories
-   |--------------------------------------------------------------------------------
-   */
-
-  reducer<TState extends Unknown>(reducer: Reducer<TState, TRecord>, state: TState): ReduceHandler<TState, TRecord> {
-    return makeReducer<TState, TRecord>(reducer, state);
-  }
-
-  /*
-   |--------------------------------------------------------------------------------
-   | Writers
-   |--------------------------------------------------------------------------------
-   */
-
-  async add<TEventType extends Event["type"]>(
+  async addEvent<TEventType extends Event["type"]>(
     event: ExcludeEmptyFields<Extract<TEvent, { type: TEventType }>> & {
       stream?: string;
     },
   ): Promise<string> {
-    return this.push(createEventRecord(event as any) as TRecord, false);
+    return this.pushEvent(createEventRecord(event as any) as TRecord, false);
   }
 
-  async addSequence<TEventType extends Event["type"]>(
+  async addEventSequence<TEventType extends Event["type"]>(
     events: (ExcludeEmptyFields<Extract<TEvent, { type: TEventType }>> & { stream?: string })[],
   ): Promise<void> {
-    return this.pushSequence(
+    return this.pushEventSequence(
       events.map((event) => ({ record: createEventRecord(event as any) as TRecord, hydrated: false })),
     );
   }
 
-  async push(record: TRecord, hydrated = true): Promise<string> {
+  async pushEvent(record: TRecord, hydrated = true): Promise<string> {
     return pushEventRecord(this as any, record, hydrated);
   }
 
-  async pushSequence(records: { record: TRecord; hydrated?: boolean }[]): Promise<void> {
+  async pushEventSequence(records: { record: TRecord; hydrated?: boolean }[]): Promise<void> {
     return pushEventRecordSequence(
       this as any,
       records.map<{ record: TRecord; hydrated: boolean }>((record) => {
@@ -159,12 +152,6 @@ export class PGEventStore<TEvent extends Event, TRecord extends EventRecord = Ev
       }),
     );
   }
-
-  /*
-   |--------------------------------------------------------------------------------
-   | Readers
-   |--------------------------------------------------------------------------------
-   */
 
   async getEventStatus(event: TRecord): Promise<EventStatus> {
     const record = await this.events.getById(event.id);
@@ -178,32 +165,79 @@ export class PGEventStore<TEvent extends Event, TRecord extends EventRecord = Ev
     return (await this.events.find(options)) as TRecord[];
   }
 
-  async getStreamState<TReducer extends ReduceHandler>(
-    stream: string,
-    reduce: TReducer,
-  ): Promise<ReturnType<TReducer> | undefined> {
-    const events = await this.getEventsByStream(stream);
-    if (events.length === 0) {
-      return undefined;
-    }
-    return reduce(events);
-  }
-
   async getEventsByStream(stream: string, options?: EventReadOptions): Promise<TRecord[]> {
     return (await this.events.getByStream(stream, options)) as TRecord[];
   }
 
-  /**
-   * Retrieve all events under the given context key.
-   *
-   * @param key - Context key to retrieve events for.
-   */
   async getEventsByContext(key: string, _?: Pagination): Promise<TRecord[]> {
     const rows = await this.contexts.getByKey(key);
     if (rows.length === 0) {
       return [];
     }
     return (await this.events.getByStreams(rows.map((row) => row.stream))) as TRecord[];
+  }
+
+  /*
+   |--------------------------------------------------------------------------------
+   | Reducers
+   |--------------------------------------------------------------------------------
+   */
+
+  makeReducer<TState extends Unknown>(
+    folder: ReducerLeftFold<TState, TRecord>,
+    config: ReducerConfig<TState>,
+  ): Reducer<TState, TRecord> {
+    return makeReducer<TState, TRecord>(folder, config);
+  }
+
+  async reduce<TReducer extends Reducer>(
+    stream: string,
+    reducer: TReducer,
+  ): Promise<ReturnType<TReducer["reduce"]> | undefined> {
+    let cursor: string | undefined;
+    let state: InferReducerState<TReducer> | undefined;
+
+    const snapshot = await this.getSnapshot(stream, reducer);
+    if (snapshot !== undefined) {
+      cursor = snapshot.cursor;
+      state = snapshot.state;
+    }
+
+    const events = await this.getEventsByStream(stream, { cursor });
+    if (events.length === 0) {
+      return undefined;
+    }
+
+    return reducer.reduce(events, state);
+  }
+
+  /*
+   |--------------------------------------------------------------------------------
+   | Snapshots
+   |--------------------------------------------------------------------------------
+   */
+
+  async createSnapshot<TReducer extends Reducer>(stream: string, { name, reduce }: TReducer): Promise<void> {
+    const events = await this.getEventsByStream(stream);
+    if (events.length === 0) {
+      return undefined;
+    }
+    await this.snapshots.insert(name, stream, events.at(-1)!.created, reduce(events));
+  }
+
+  async getSnapshot<TReducer extends Reducer, TState = InferReducerState<TReducer>>(
+    stream: string,
+    reducer: TReducer,
+  ): Promise<{ cursor: string; state: TState } | undefined> {
+    const snapshot = await this.snapshots.getByStream(reducer.name, stream);
+    if (snapshot === undefined) {
+      return undefined;
+    }
+    return { cursor: snapshot.cursor, state: snapshot.state as TState };
+  }
+
+  async deleteSnapshot<TReducer extends Reducer>(stream: string, reducer: TReducer): Promise<void> {
+    await this.snapshots.remove(reducer.name, stream);
   }
 
   /*
@@ -239,7 +273,7 @@ type Config<TEvent extends Event, TRecord extends EventRecord> = {
   database: () => PostgreSQL;
   events: EventList<TEvent>;
   validators: ValidatorConfig<TEvent>;
-  hooks?: EventHooks<TRecord>;
+  hooks?: EventStoreHooks<TRecord>;
 };
 
 type ValidatorConfig<TEvent extends Event> = {

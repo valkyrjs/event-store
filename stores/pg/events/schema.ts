@@ -2,7 +2,7 @@ import { index, jsonb, type PgColumn, type PgTableWithColumns, varchar } from "d
 
 import { schema } from "../schema.ts";
 
-export const events: EventTable = schema.table("events", {
+export const events: Table = schema.table("events", {
   id: varchar("id").primaryKey(),
   stream: varchar("stream").notNull(),
   type: varchar("type").notNull(),
@@ -11,13 +11,13 @@ export const events: EventTable = schema.table("events", {
   recorded: varchar("recorded").notNull(),
   created: varchar("created").notNull(),
 }, (table) => ({
-  streamIdx: index("stream_idx").on(table.stream),
-  typeIdx: index("type_idx").on(table.type),
-  recordedIdx: index("recorded_idx").on(table.recorded),
-  createdIdx: index("created_idx").on(table.created),
+  streamIdx: index().on(table.stream),
+  typeIdx: index().on(table.type),
+  recordedIdx: index().on(table.recorded),
+  createdIdx: index().on(table.created),
 }));
 
-type EventTable = PgTableWithColumns<{
+type Table = PgTableWithColumns<{
   name: "events";
   schema: "event_store";
   columns: {

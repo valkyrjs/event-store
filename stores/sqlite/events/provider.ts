@@ -1,6 +1,7 @@
 import { and, eq, gt, inArray, lt, sql } from "drizzle-orm";
 
 import type { EventRecord } from "~types/event.ts";
+import type { EventReadOptions } from "~types/event-store.ts";
 import type { Database } from "~utilities/database.ts";
 
 import type { EventStoreDB } from "../database.ts";
@@ -31,28 +32,24 @@ export class EventProvider {
    */
   async find({ cursor, direction }: EventReadOptions = {}): Promise<EventRecord[]> {
     if (cursor !== undefined) {
-      if (direction === 1) {
-        return this.db.select().from(schema).where(gt(schema.created, cursor)).orderBy(schema.created);
-      }
-      if (direction === -1) {
+      if (direction === "desc") {
         return this.db.select().from(schema).where(lt(schema.created, cursor)).orderBy(schema.created);
       }
+      return this.db.select().from(schema).where(gt(schema.created, cursor)).orderBy(schema.created);
     }
     return this.db.select().from(schema).orderBy(schema.created);
   }
 
   async getByStream(stream: string, { cursor, direction }: EventReadOptions = {}): Promise<EventRecord[]> {
     if (cursor !== undefined) {
-      if (direction === 1) {
-        return this.db.select().from(schema).where(and(eq(schema.stream, stream), gt(schema.created, cursor))).orderBy(
-          schema.created,
-        );
-      }
-      if (direction === -1) {
+      if (direction === "desc") {
         return this.db.select().from(schema).where(and(eq(schema.stream, stream), lt(schema.created, cursor))).orderBy(
           schema.created,
         );
       }
+      return this.db.select().from(schema).where(and(eq(schema.stream, stream), gt(schema.created, cursor))).orderBy(
+        schema.created,
+      );
     }
     return this.db.select().from(schema).where(eq(schema.stream, stream)).orderBy(schema.created);
   }
@@ -74,16 +71,3 @@ export class EventProvider {
     return count > 0;
   }
 }
-
-type EventReadOptions = {
-  /**
-   * Fetch events from a specific point in time. The direction of which
-   * events are fetched is determined by the direction option.
-   */
-  cursor?: string;
-
-  /**
-   * Fetch events in ascending or descending order.
-   */
-  direction?: 1 | -1;
-};

@@ -1,5 +1,5 @@
 {
-  "id": "08e8f65a-79d3-401c-b0d9-c6117176715e",
+  "id": "f8b9d9a5-a33e-433b-a979-e991ee4be5d8",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -22,8 +22,8 @@
         }
       },
       "indexes": {
-        "key_idx": {
-          "name": "key_idx",
+        "contexts_key_index": {
+          "name": "contexts_key_index",
           "columns": [
             {
               "expression": "key",
@@ -90,8 +90,8 @@
         }
       },
       "indexes": {
-        "stream_idx": {
-          "name": "stream_idx",
+        "events_stream_index": {
+          "name": "events_stream_index",
           "columns": [
             {
               "expression": "stream",
@@ -105,8 +105,8 @@
           "method": "btree",
           "with": {}
         },
-        "type_idx": {
-          "name": "type_idx",
+        "events_type_index": {
+          "name": "events_type_index",
           "columns": [
             {
               "expression": "type",
@@ -120,8 +120,8 @@
           "method": "btree",
           "with": {}
         },
-        "recorded_idx": {
-          "name": "recorded_idx",
+        "events_recorded_index": {
+          "name": "events_recorded_index",
           "columns": [
             {
               "expression": "recorded",
@@ -135,11 +135,73 @@
           "method": "btree",
           "with": {}
         },
-        "created_idx": {
-          "name": "created_idx",
+        "events_created_index": {
+          "name": "events_created_index",
           "columns": [
             {
               "expression": "created",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "event_store.snapshots": {
+      "name": "snapshots",
+      "schema": "event_store",
+      "columns": {
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stream": {
+          "name": "stream",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cursor": {
+          "name": "cursor",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "state": {
+          "name": "state",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "snapshots_name_stream_cursor_index": {
+          "name": "snapshots_name_stream_cursor_index",
+          "columns": [
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "stream",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "cursor",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

@@ -1,7 +1,7 @@
 import { describe } from "std/testing/bdd.ts";
 
 import { ValkyrEventStore } from "~stores/valkyr/event-store.ts";
-import type { EventHooks } from "~types/event-store.ts";
+import type { EventStoreHooks } from "~types/event-store.ts";
 
 import { testEventStoreMethods } from "./helpers/event-store.bdd.ts";
 import { type Event, type EventRecord, events, validators } from "./mocks/events.ts";
@@ -13,7 +13,7 @@ import { type Event, type EventRecord, events, validators } from "./mocks/events
  */
 
 describe("Valkyr Event Store", () => {
-  testEventStoreMethods(async (hooks?: EventHooks<EventRecord>) => getEventStore(hooks), {
+  testEventStoreMethods(async (hooks?: EventStoreHooks<EventRecord>) => getEventStore(hooks), {
     skipSequence: true,
   });
 });
@@ -24,7 +24,7 @@ describe("Valkyr Event Store", () => {
  |--------------------------------------------------------------------------------
  */
 
-function getEventStore(hooks?: EventHooks<EventRecord>) {
+function getEventStore(hooks?: EventStoreHooks<EventRecord>) {
   return new ValkyrEventStore<Event>({
     database: "memorydb",
     events,
