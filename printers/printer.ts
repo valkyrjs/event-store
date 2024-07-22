@@ -140,7 +140,7 @@ async function getLocalConfigs(paths: string[], events: Config[] = []): Promise<
 async function resolveLocalConfigs(path: string, events: Config[]) {
   for (const entity of await readdir(path, { withFileTypes: true })) {
     if (entity.isDirectory()) {
-      resolveLocalConfigs(join(path, entity.name), events);
+      await resolveLocalConfigs(join(path, entity.name), events);
     }
     if (entity.isFile() === true && entity.name.endsWith(".json")) {
       const config = JSON.parse(new TextDecoder().decode(await readFile(join(path, entity.name))));

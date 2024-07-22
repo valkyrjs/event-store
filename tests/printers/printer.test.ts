@@ -25,22 +25,22 @@ describe("Events Printer", () => {
       "user:activated",
       "user:created",
       "user:deactivated",
-      "user:email_set",
-      "user:family_name_set",
-      "user:given_name_set",
-      "user:meta_added",
+      "user:email-set",
+      "user:name:family-set",
+      "user:name:given-set",
+      "user:meta-added",
     ]);
 
     assertArrayIncludes(Array.from(validators.data.keys()), [
       "user:created",
-      "user:email_set",
-      "user:family_name_set",
-      "user:given_name_set",
+      "user:email-set",
+      "user:name:family-set",
+      "user:name:given-set",
     ]);
 
     assertArrayIncludes(Array.from(validators.meta.keys()), [
       "user:activated",
-      "user:email_set",
+      "user:email-set",
     ]);
   });
 });

@@ -1,6 +1,6 @@
 {
   "event": {
-    "type": "user:meta_added",
+    "type": "user:meta-added",
     "data": {
       "meta": {
         "type": "object",

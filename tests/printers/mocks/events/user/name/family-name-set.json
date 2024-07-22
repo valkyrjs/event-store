@@ -1,10 +1,10 @@
 {
   "event": {
-    "type": "user:given_name_set",
+    "type": "user:name:family-set",
     "data": {
-      "given": {
+      "family": {
         "type": "string"
       }
     }
-  }
+  }  
 }
