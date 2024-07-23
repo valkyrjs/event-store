@@ -14,15 +14,15 @@ export function getUserReducer(store: EventStore<Event, EventRecord>) {
           state.email = event.data.email;
           break;
         }
-        case "user:given_name_set": {
+        case "user:name:given-set": {
           state.name.given = event.data.given;
           break;
         }
-        case "user:family_name_set": {
+        case "user:name:family-set": {
           state.name.family = event.data.family;
           break;
         }
-        case "user:email_set": {
+        case "user:email-set": {
           state.email = event.data.email;
           break;
         }

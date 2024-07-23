@@ -44,8 +44,9 @@ import type { EventReadOptions, EventStore, EventStoreHooks, Pagination } from "
 import type { InferReducerState, Reducer, ReducerConfig, ReducerLeftFold } from "~types/reducer.ts";
 import type { ExcludeEmptyFields } from "~types/utilities.ts";
 import { Database } from "~utilities/database.ts";
+import { pushEventRecord } from "~utilities/event-store/push-event-record.ts";
+import { pushEventRecordSequence } from "~utilities/event-store/push-event-record-sequence.ts";
 
-import { pushEventRecord, pushEventRecordSequence } from "../utilities.ts";
 import { ContextProvider } from "./contexts/provider.ts";
 import { type EventStoreDB, schema } from "./database.ts";
 import { EventProvider } from "./events/provider.ts";
@@ -72,7 +73,7 @@ export class SQLiteEventStore<TEvent extends Event, TRecord extends EventRecord 
   readonly hooks: EventStoreHooks<TRecord>;
 
   readonly contexts: ContextProvider;
-  readonly events: EventProvider;
+  readonly events: EventProvider<TRecord>;
   readonly snapshots: SnapshotProvider;
 
   readonly validator: Validator<TRecord>;
@@ -161,7 +162,7 @@ export class SQLiteEventStore<TEvent extends Event, TRecord extends EventRecord 
   }
 
   async getEvents(options?: EventReadOptions): Promise<TRecord[]> {
-    return (await this.events.find(options)) as TRecord[];
+    return (await this.events.get(options)) as TRecord[];
   }
 
   async getEventsByStream(stream: string, options?: EventReadOptions): Promise<TRecord[]> {
@@ -174,6 +175,16 @@ export class SQLiteEventStore<TEvent extends Event, TRecord extends EventRecord 
       return [];
     }
     return (await this.events.getByStreams(rows.map((row) => row.stream))) as TRecord[];
+  }
+
+  async replayEvents(stream?: string): Promise<void> {
+    const events = stream !== undefined ? await this.events.getByStream(stream) : await this.events.get();
+    for (const event of events) {
+      await Promise.all([
+        this.contextor.push(event),
+        this.projector.project(event, { hydrated: true, outdated: false }),
+      ]);
+    }
   }
 
   /*

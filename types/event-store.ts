@@ -109,6 +109,17 @@ export type EventStore<TEvent extends Event, TRecord extends EventRecord> = {
    */
   getEventsByContext(key: string, _?: Pagination): Promise<TRecord[]>;
 
+  /**
+   * Retrieves a list of events, and runs them through context, and projection
+   * subcribers. This is usefull for when projections, or contexts has been updated
+   * or added.
+   *
+   * When no stream is provided, the entire event store is replayed.
+   *
+   * @param stream - Stream to replay events for. (Optional)
+   */
+  replayEvents(stream?: string): Promise<void>;
+
   /*
    |--------------------------------------------------------------------------------
    | Reducers

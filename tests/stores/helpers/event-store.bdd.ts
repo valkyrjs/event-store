@@ -193,11 +193,11 @@ export function testEventStoreMethods(
       assertEquals(projectedResult, "John Doe | john.doe@fixture.none");
     });
 
-    it("should insert 'user:meta_added' event", async () => {
+    it("should insert 'user:meta-added' event", async () => {
       const store = await getEventStore();
 
       const event = {
-        type: "user:meta_added",
+        type: "user:meta-added",
         data: {
           meta: {
             foo: "bar",
@@ -207,7 +207,7 @@ export function testEventStoreMethods(
 
       let projectedResult: string = "";
 
-      store.projector.on("user:meta_added", async (record) => {
+      store.projector.on("user:meta-added", async (record) => {
         projectedResult = record.data.meta.foo;
       });
 
@@ -311,7 +311,7 @@ export function testEventStoreMethods(
       assertEquals(res2.length, 2);
     });
 
-    it("should insert 'user:email_set' and remove it from 'tenant:xyz' context", async () => {
+    it("should insert 'user:email-set' and remove it from 'tenant:xyz' context", async () => {
       const store = await getEventStore();
 
       store.contextor.register("user:created", () => [
@@ -321,7 +321,7 @@ export function testEventStoreMethods(
         },
       ]);
 
-      store.contextor.register("user:email_set", () => [
+      store.contextor.register("user:email-set", () => [
         {
           key: "tenant:zyx",
           op: "remove",
@@ -346,7 +346,7 @@ export function testEventStoreMethods(
 
       await store.addEvent({
         stream: "user-1",
-        type: "user:email_set",
+        type: "user:email-set",
         data: {
           email: "jane.doe@fixture.none",
         },
@@ -361,9 +361,92 @@ export function testEventStoreMethods(
     });
   });
 
+  describe(".replayEvents", () => {
+    it("should replay events", async () => {
+      const store = await getEventStore();
+      const stream = nanoid();
+
+      const record: Record<string, any> = {};
+
+      store.projector.on("user:created", async ({ stream, data: { name, email } }) => {
+        record[stream] = {
+          name,
+          email,
+        };
+      });
+
+      store.projector.on("user:name:given-set", async ({ stream, data: { given } }) => {
+        record[stream].name.given = given;
+      });
+
+      store.projector.on("user:email-set", async ({ stream, data: { email } }) => {
+        record[stream].email = email;
+      });
+
+      const events = [
+        {
+          stream,
+          type: "user:created",
+          data: {
+            name: {
+              given: "Jane",
+              family: "Doe",
+            },
+            email: "jane.doe@fixture.none",
+          },
+        } as const,
+        {
+          stream,
+          type: "user:name:given-set",
+          data: {
+            given: "John",
+          },
+        } as const,
+        {
+          stream,
+          type: "user:email-set",
+          data: {
+            email: "john@doe.com",
+          },
+          meta: {
+            auditor: "admin",
+          },
+        } as const,
+      ];
+
+      for (const event of events) {
+        await store.addEvent(event);
+      }
+
+      assertObjectMatch(record, {
+        [stream]: {
+          name: {
+            given: "John",
+            family: "Doe",
+          },
+          email: "john@doe.com",
+        },
+      });
+
+      delete record[stream];
+
+      await store.replayEvents(stream);
+
+      assertObjectMatch(record, {
+        [stream]: {
+          name: {
+            given: "John",
+            family: "Doe",
+          },
+          email: "john@doe.com",
+        },
+      });
+    });
+  });
+
   if (options.skipSequence === false) {
     describe(".addSequence", () => {
-      it("should insert 'user:created', 'user:given_name_set', and 'user:email_set' in a sequence of events", async () => {
+      it("should insert 'user:created', 'user:name:given-set', and 'user:email-set' in a sequence of events", async () => {
         const store = await getEventStore();
         const stream = nanoid();
 
@@ -381,14 +464,14 @@ export function testEventStoreMethods(
           } as const,
           {
             stream,
-            type: "user:given_name_set",
+            type: "user:name:given-set",
             data: {
               given: "John",
             },
           } as const,
           {
             stream,
-            type: "user:email_set",
+            type: "user:email-set",
             data: {
               email: "john@doe.com",
             },
@@ -432,14 +515,14 @@ export function testEventStoreMethods(
           } as const,
           {
             stream,
-            type: "user:given_name_set",
+            type: "user:name:given-set",
             data: {
               givens: "John",
             },
           } as any,
           {
             stream,
-            type: "user:email_set",
+            type: "user:email-set",
             data: {
               email: "john@doe.com",
             },
@@ -463,13 +546,13 @@ export function testEventStoreMethods(
   }
 
   describe(".makeReducer", () => {
-    it("should create a 'user' reducer and reject a 'user:email_set' event", async () => {
+    it("should create a 'user' reducer and reject a 'user:email-set' event", async () => {
       const store = await getEventStore();
       const stream = nanoid();
 
       const userReducer = getUserReducer(store);
 
-      store.validator.on("user:email_set", async (record) => {
+      store.validator.on("user:email-set", async (record) => {
         const user = await store.reduce(stream, userReducer);
         if (user === undefined) {
           throw new Error("Event stream does not exist");
@@ -495,7 +578,7 @@ export function testEventStoreMethods(
         async () =>
           await store.addEvent({
             stream,
-            type: "user:email_set",
+            type: "user:email-set",
             data: {
               email: "john.doe@fixture.none",
             },
@@ -529,7 +612,7 @@ export function testEventStoreMethods(
 
       await store.addEvent({
         stream,
-        type: "user:email_set",
+        type: "user:email-set",
         data: {
           email: "jane.doe@fixture.none",
         },

@@ -1,13 +1,15 @@
 import { index, jsonb, type PgColumn, type PgTableWithColumns, varchar } from "drizzle-orm/pg-core";
 
+import type { EventRecord } from "~types/event.ts";
+
 import { schema } from "../schema.ts";
 
 export const events: Table = schema.table("events", {
   id: varchar("id").primaryKey(),
   stream: varchar("stream").notNull(),
   type: varchar("type").notNull(),
-  data: jsonb("data").$type<Record<string, any>>().notNull(),
-  meta: jsonb("meta").$type<Record<string, any>>().notNull(),
+  data: jsonb("data").$type<EventRecord["data"]>().notNull(),
+  meta: jsonb("meta").$type<EventRecord["meta"]>().notNull(),
   recorded: varchar("recorded").notNull(),
   created: varchar("created").notNull(),
 }, (table) => ({
@@ -62,7 +64,7 @@ type Table = PgTableWithColumns<{
       tableName: "events";
       dataType: "json";
       columnType: "PgJsonb";
-      data: Record<string, any>;
+      data: EventRecord["data"];
       driverParam: unknown;
       notNull: true;
       hasDefault: false;
@@ -74,7 +76,7 @@ type Table = PgTableWithColumns<{
       tableName: "events";
       dataType: "json";
       columnType: "PgJsonb";
-      data: Record<string, any>;
+      data: EventRecord["meta"];
       driverParam: unknown;
       notNull: true;
       hasDefault: false;

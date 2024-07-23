@@ -8,10 +8,10 @@ export const events = new Set(
     "user:activated",
     "user:created",
     "user:deactivated",
-    "user:email_set",
-    "user:family_name_set",
-    "user:given_name_set",
-    "user:meta_added",
+    "user:email-set",
+    "user:meta-added",
+    "user:name:family-set",
+    "user:name:given-set",
   ] as const,
 );
 
@@ -26,14 +26,14 @@ export const validators = {
         })
         .strict(),
     ],
-    ["user:email_set", z.object({ email: z.string() }).strict()],
-    ["user:family_name_set", z.object({ family: z.string() }).strict()],
-    ["user:given_name_set", z.object({ given: z.string() }).strict()],
-    ["user:meta_added", z.object({ meta: z.object({}).catchall(z.any()) }).strict()],
+    ["user:email-set", z.object({ email: z.string() }).strict()],
+    ["user:meta-added", z.object({ meta: z.object({}).catchall(z.any()) }).strict()],
+    ["user:name:family-set", z.object({ family: z.string() }).strict()],
+    ["user:name:given-set", z.object({ given: z.string() }).strict()],
   ]),
   meta: new Map<Event["type"], AnyZodObject>([
     ["user:activated", z.object({ auditor: z.string() }).strict()],
-    ["user:email_set", z.object({ auditor: z.string() }).strict()],
+    ["user:email-set", z.object({ auditor: z.string() }).strict()],
   ]),
 };
 
@@ -44,9 +44,9 @@ export type Event =
   | UserCreated
   | UserDeactivated
   | UserEmailSet
-  | UserFamilyNameSet
-  | UserGivenNameSet
-  | UserMetaAdded;
+  | UserMetaAdded
+  | UserNameFamilySet
+  | UserNameGivenSet;
 
 export type UserActivated = TEvent<"user:activated", Empty, { auditor: string }>;
 
@@ -58,10 +58,10 @@ export type UserCreated = TEvent<
 
 export type UserDeactivated = TEvent<"user:deactivated", Empty, Empty>;
 
-export type UserEmailSet = TEvent<"user:email_set", { email: string }, { auditor: string }>;
+export type UserEmailSet = TEvent<"user:email-set", { email: string }, { auditor: string }>;
 
-export type UserFamilyNameSet = TEvent<"user:family_name_set", { family: string }, Empty>;
+export type UserMetaAdded = TEvent<"user:meta-added", { meta: any }, Empty>;
 
-export type UserGivenNameSet = TEvent<"user:given_name_set", { given: string }, Empty>;
+export type UserNameFamilySet = TEvent<"user:name:family-set", { family: string }, Empty>;
 
-export type UserMetaAdded = TEvent<"user:meta_added", { meta: any }, Empty>;
+export type UserNameGivenSet = TEvent<"user:name:given-set", { given: string }, Empty>;

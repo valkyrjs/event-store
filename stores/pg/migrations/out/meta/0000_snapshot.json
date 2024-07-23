@@ -1,5 +1,5 @@
 {
-  "id": "f8b9d9a5-a33e-433b-a979-e991ee4be5d8",
+  "id": "70d5a1f5-9a76-4ad3-a5a7-2aafa03a1369",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -8,6 +8,12 @@
       "name": "contexts",
       "schema": "event_store",
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
         "key": {
           "name": "key",
           "type": "varchar",
@@ -159,6 +165,12 @@
       "name": "snapshots",
       "schema": "event_store",
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
         "name": {
           "name": "name",
           "type": "varchar",

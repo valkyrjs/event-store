@@ -3,7 +3,7 @@ import type { Collection } from "@valkyr/db";
 import type { EventRecord } from "~types/event.ts";
 import type { EventReadOptions } from "~types/event-store.ts";
 
-export class EventProvider {
+export class EventProvider<TEventRecord extends EventRecord> {
   constructor(readonly events: Collection<EventRecord>) {}
 
   /**
@@ -12,7 +12,7 @@ export class EventProvider {
    * @param record - Event record to insert.
    * @param tx     - Transaction to insert the record within. (Optional)
    */
-  async insert(record: EventRecord): Promise<void> {
+  async insert(record: TEventRecord): Promise<void> {
     await this.events.insertOne(record);
   }
 
@@ -22,17 +22,23 @@ export class EventProvider {
    *
    * @param options - Find options.
    */
-  async find({ cursor, direction }: EventReadOptions = {}): Promise<EventRecord[]> {
+  async get({ cursor, direction }: EventReadOptions = {}): Promise<TEventRecord[]> {
     const filter: any = {};
     if (cursor !== undefined) {
       filter.created = {
         [direction === "desc" ? "$lt" : "$gt"]: cursor,
       };
     }
-    return this.events.find(filter, { sort: { created: 1 } });
+    return await this.events.find(filter, { sort: { created: 1 } }) as TEventRecord[];
   }
 
-  async getByStream(stream: string, { cursor, direction }: EventReadOptions = {}): Promise<EventRecord[]> {
+  /**
+   * Get events within the given stream.
+   *
+   * @param stream  - Stream to fetch events for.
+   * @param options - Read options for modifying the result.
+   */
+  async getByStream(stream: string, { cursor, direction }: EventReadOptions = {}): Promise<TEventRecord[]> {
     const filter: any = {};
     if (stream !== undefined) {
       filter.stream = stream;
@@ -42,18 +48,31 @@ export class EventProvider {
         [direction === "desc" ? "$lt" : "$gt"]: cursor,
       };
     }
-    return this.events.find(filter, { sort: { created: 1 } });
+    return await this.events.find(filter, { sort: { created: 1 } }) as TEventRecord[];
   }
 
-  async getByStreams(streams: string[]): Promise<EventRecord[]> {
-    return this.events.find({ stream: { $in: streams } }, { sort: { created: 1 } });
+  /**
+   * Get events within given list of streams.
+   *
+   * @param streams - Stream to get events for.
+   */
+  async getByStreams(streams: string[]): Promise<TEventRecord[]> {
+    return await this.events.find({ stream: { $in: streams } }, { sort: { created: 1 } }) as TEventRecord[];
   }
 
-  async getById(id: string): Promise<EventRecord | undefined> {
-    return this.events.findById(id);
+  /**
+   * Get a single event by its id.
+   *
+   * @param id - Event id.
+   */
+  async getById(id: string): Promise<TEventRecord | undefined> {
+    return await this.events.findById(id) as TEventRecord | undefined;
   }
 
-  async checkOutdated({ stream, type, created }: EventRecord): Promise<boolean> {
+  /**
+   * Check if the given event is outdated in relation to the local event data.
+   */
+  async checkOutdated({ stream, type, created }: TEventRecord): Promise<boolean> {
     const count = await this.events.count({
       stream,
       type,

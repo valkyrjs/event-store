@@ -44,8 +44,9 @@ import type { EventReadOptions, EventStore, EventStoreHooks, Pagination } from "
 import type { InferReducerState, Reducer, ReducerConfig, ReducerLeftFold } from "~types/reducer.ts";
 import type { ExcludeEmptyFields } from "~types/utilities.ts";
 import { Database } from "~utilities/database.ts";
+import { pushEventRecord } from "~utilities/event-store/push-event-record.ts";
+import { pushEventRecordSequence } from "~utilities/event-store/push-event-record-sequence.ts";
 
-import { pushEventRecord, pushEventRecordSequence } from "../utilities.ts";
 import { ContextProvider } from "./contexts/provider.ts";
 import type { EventStoreDB } from "./database.ts";
 import { schema } from "./database.ts";
@@ -73,7 +74,7 @@ export class PGEventStore<TEvent extends Event, TRecord extends EventRecord = Ev
   readonly hooks: EventStoreHooks<TRecord>;
 
   readonly contexts: ContextProvider;
-  readonly events: EventProvider;
+  readonly events: EventProvider<TRecord>;
   readonly snapshots: SnapshotProvider;
 
   readonly validator: Validator<TRecord>;
@@ -162,11 +163,11 @@ export class PGEventStore<TEvent extends Event, TRecord extends EventRecord = Ev
   }
 
   async getEvents(options?: EventReadOptions): Promise<TRecord[]> {
-    return (await this.events.find(options)) as TRecord[];
+    return this.events.get(options);
   }
 
   async getEventsByStream(stream: string, options?: EventReadOptions): Promise<TRecord[]> {
-    return (await this.events.getByStream(stream, options)) as TRecord[];
+    return this.events.getByStream(stream, options);
   }
 
   async getEventsByContext(key: string, _?: Pagination): Promise<TRecord[]> {
@@ -174,7 +175,17 @@ export class PGEventStore<TEvent extends Event, TRecord extends EventRecord = Ev
     if (rows.length === 0) {
       return [];
     }
-    return (await this.events.getByStreams(rows.map((row) => row.stream))) as TRecord[];
+    return this.events.getByStreams(rows.map((row) => row.stream));
+  }
+
+  async replayEvents(stream?: string): Promise<void> {
+    const events = stream !== undefined ? await this.events.getByStream(stream) : await this.events.get();
+    for (const event of events) {
+      await Promise.all([
+        this.contextor.push(event),
+        this.projector.project(event, { hydrated: true, outdated: false }),
+      ]);
+    }
   }
 
   /*

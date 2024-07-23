@@ -6,8 +6,9 @@ import { jsonSchemaToZod } from "json-schema-to-zod";
 import { pascalcase } from "pascalcase";
 import { format } from "prettier";
 
-import { ensureDir } from "../utilities/fs.ts";
-import { assertConfig, type Config } from "./asserts/events.ts";
+import { ensureDir } from "~utilities/fs.ts";
+
+import { assertConfig, Config } from "./asserts/events.ts";
 import { getEventType, getImports } from "./types.ts";
 import { jsonSchema } from "./utilities/json-schema.ts";
 

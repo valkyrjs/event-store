@@ -1,8 +1,9 @@
-import { index, jsonb, type PgColumn, type PgTableWithColumns, varchar } from "drizzle-orm/pg-core";
+import { index, jsonb, type PgColumn, type PgTableWithColumns, serial, varchar } from "drizzle-orm/pg-core";
 
 import { schema } from "../schema.ts";
 
 export const snapshots: Table = schema.table("snapshots", {
+  id: serial("id").primaryKey(),
   name: varchar("name").notNull(),
   stream: varchar("stream").notNull(),
   cursor: varchar("cursor").notNull(),

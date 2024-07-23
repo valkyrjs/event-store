@@ -37,12 +37,12 @@ import { createEventRecord } from "~libraries/event.ts";
 import { Projector } from "~libraries/projector.ts";
 import { makeReducer } from "~libraries/reducer.ts";
 import { Validator } from "~libraries/validator.ts";
-import { pushEventRecord } from "~stores/utilities.ts";
 import type { Unknown } from "~types/common.ts";
 import type { Event, EventRecord, EventStatus, EventToRecord } from "~types/event.ts";
 import type { EventReadOptions, EventStore, EventStoreHooks, Pagination } from "~types/event-store.ts";
 import type { InferReducerState, Reducer, ReducerConfig, ReducerLeftFold } from "~types/reducer.ts";
 import type { ExcludeEmptyFields } from "~types/utilities.ts";
+import { pushEventRecord } from "~utilities/event-store/push-event-record.ts";
 
 import { type Adapter, type Collections, getEventStoreDatabase } from "./database.ts";
 import { ContextProvider } from "./providers/context.ts";
@@ -67,7 +67,7 @@ export class ValkyrEventStore<TEvent extends Event, TRecord extends EventRecord 
 
   readonly hooks: EventStoreHooks<TRecord>;
 
-  readonly events: EventProvider;
+  readonly events: EventProvider<TRecord>;
   readonly contexts: ContextProvider;
   readonly snapshots: SnapshotProvider;
 
@@ -144,7 +144,7 @@ export class ValkyrEventStore<TEvent extends Event, TRecord extends EventRecord 
   }
 
   async getEvents(options?: EventReadOptions): Promise<TRecord[]> {
-    return (await this.events.find(options)) as TRecord[];
+    return (await this.events.get(options)) as TRecord[];
   }
 
   async getEventsByStream(stream: string, options?: EventReadOptions): Promise<TRecord[]> {
@@ -157,6 +157,16 @@ export class ValkyrEventStore<TEvent extends Event, TRecord extends EventRecord 
       return [];
     }
     return (await this.events.getByStreams(rows.map((row) => row.stream))) as TRecord[];
+  }
+
+  async replayEvents(stream?: string): Promise<void> {
+    const events = stream !== undefined ? await this.events.getByStream(stream) : await this.events.get();
+    for (const event of events) {
+      await Promise.all([
+        this.contextor.push(event),
+        this.projector.project(event, { hydrated: true, outdated: false }),
+      ]);
+    }
   }
 
   /*
