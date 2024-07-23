@@ -1,5 +1,5 @@
 import { EventDataValidationFailure, EventValidationFailure } from "~libraries/errors.ts";
-import { EventStoreAdapter } from "~types/event-store-adaper.ts";
+import type { EventStoreAdapter } from "~types/event-store-adaper.ts";
 
 export async function validateEventRecord(
   store: EventStoreAdapter,

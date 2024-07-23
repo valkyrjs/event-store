@@ -1,5 +1,5 @@
 import { getLogicalTimestamp } from "~libraries/time.ts";
-import { EventStoreAdapter } from "~types/event-store-adaper.ts";
+import type { EventStoreAdapter } from "~types/event-store-adaper.ts";
 import { insertEventRecord } from "~utilities/event-store/insert-event-record.ts";
 import { pushEventRecordUpdates } from "~utilities/event-store/push-event-record-updates.ts";
 import { validateEventRecord } from "~utilities/event-store/validate-event-record.ts";

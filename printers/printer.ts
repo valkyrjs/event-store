@@ -8,7 +8,7 @@ import { format } from "prettier";
 
 import { ensureDir } from "~utilities/fs.ts";
 
-import { assertConfig, Config } from "./asserts/events.ts";
+import { assertConfig, type Config } from "./asserts/events.ts";
 import { getEventType, getImports } from "./types.ts";
 import { jsonSchema } from "./utilities/json-schema.ts";
 
