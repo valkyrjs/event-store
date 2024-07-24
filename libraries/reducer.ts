@@ -12,13 +12,13 @@ const names = new Set<string>();
  */
 export function makeReducer<TState extends Unknown, TRecord extends EventRecord>(
   fold: ReducerLeftFold<TState, TRecord>,
-  config: { name: string; state: Partial<TState> },
+  config: { name: string; state: () => Partial<TState> },
 ): Reducer<TState, TRecord> {
   reserveReducerName(config.name);
   return {
     name: config.name,
     reduce(events: TRecord[], state?: TState) {
-      return events.reduce(fold, state ?? (config.state as TState));
+      return events.reduce(fold, state ?? (config.state() as TState));
     },
   };
 }

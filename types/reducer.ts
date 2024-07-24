@@ -43,7 +43,7 @@ export type ReducerLeftFold<TState extends Record<string, unknown> = any, TRecor
  */
 export type ReducerConfig<TState extends Record<string, unknown>> = {
   name: string;
-  state: TState;
+  state: () => TState;
 };
 
 export type InferReducerState<TReducer> = TReducer extends Reducer<infer TState> ? TState : never;

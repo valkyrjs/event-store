@@ -38,14 +38,14 @@ export function getUserReducer(store: EventStore<Event, EventRecord>) {
       return state;
     }, {
       name: "user",
-      state: {
+      state: () => ({
         name: {
           given: "",
           family: "",
         },
         email: "",
         active: true,
-      },
+      }),
     });
   }
   return userReducer;
