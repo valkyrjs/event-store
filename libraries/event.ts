@@ -99,7 +99,9 @@ export class Event<TEventState extends EventState = EventState> {
   }
 }
 
-export const event = {
+export const event: {
+  type<const TType extends string>(type: TType): Event<{ type: TType }>;
+} = {
   type<const TType extends string>(type: TType): Event<{ type: TType }> {
     return new Event<{ type: TType }>({ type });
   },
