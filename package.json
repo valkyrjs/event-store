@@ -1,0 +1,20 @@
+{
+  "dependencies": {
+    "@std/async": "npm:@jsr/std__async@1.0.12",
+    "@valkyr/db": "1.0.1",
+    "mongodb": "6.15.0",
+    "nanoid": "5.1.5",
+    "postgres": "3.4.5",
+    "zod": "next"
+  },
+  "devDependencies": {
+    "@std/assert": "npm:@jsr/std__assert@1.0.12",
+    "@std/testing": "npm:@jsr/std__testing@1.0.11",
+    "@valkyr/testcontainers": "npm:@jsr/valkyr__testcontainers@2.0.0",
+    "eslint": "9.24.0",
+    "eslint-plugin-simple-import-sort": "12.1.1",
+    "fake-indexeddb": "6.0.0",
+    "prettier": "3.5.3",
+    "typescript-eslint": "8.30.1"
+  }
+}

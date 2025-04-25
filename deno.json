@@ -1,0 +1,27 @@
+{
+  "name": "@valkyr/event-store",
+  "version": "2.0.0",
+  "exports": {
+    ".": "./mod.ts",
+    "./browser": "./adapters/browser/adapter.ts",
+    "./mongo": "./adapters/mongo/adapter.ts",
+    "./postgres": "./adapters/postgres/adapter.ts",
+    "./printer": "./printers/printer.ts"
+  },
+  "publish": {
+    "exclude": [
+      ".github",
+      ".vscode",
+      ".gitignore",
+      "tests"
+    ]
+  },
+  "tasks": {
+    "check": "deno check ./mod.ts",
+    "lint": "npx eslint -c eslint.config.mjs .",
+    "test": "deno test --allow-all",
+    "test:publish": "deno publish --dry-run",
+    "ncu": "npx ncu -u -p npm"
+  },
+  "nodeModulesDir": "auto"
+}
