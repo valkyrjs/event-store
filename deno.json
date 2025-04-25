@@ -1,12 +1,11 @@
 {
   "name": "@valkyr/event-store",
-  "version": "2.0.0",
+  "version": "2.0.0-beta.1",
   "exports": {
     ".": "./mod.ts",
     "./browser": "./adapters/browser/adapter.ts",
     "./mongo": "./adapters/mongo/adapter.ts",
-    "./postgres": "./adapters/postgres/adapter.ts",
-    "./printer": "./printers/printer.ts"
+    "./postgres": "./adapters/postgres/adapter.ts"
   },
   "publish": {
     "exclude": [

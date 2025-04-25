@@ -1,9 +1,9 @@
 import { afterAll, afterEach, beforeAll, describe } from "@std/testing/bdd";
 import { MongoTestContainer } from "@valkyr/testcontainers/mongodb";
 
-import { MongoAdapter, register } from "../../adapters/mongo/adapter.ts";
-import { EventStore, EventStoreHooks } from "../../libraries/event-store.ts";
-import { Projector } from "../../libraries/projector.ts";
+import { MongoAdapter, register } from "../adapters/mongo/adapter.ts";
+import { EventStore, EventStoreHooks } from "../libraries/event-store.ts";
+import { Projector } from "../libraries/projector.ts";
 import { aggregates } from "./mocks/aggregates.ts";
 import { events, EventStoreFactory } from "./mocks/events.ts";
 import testAddEvent from "./store/add-event.ts";

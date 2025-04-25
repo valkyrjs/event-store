@@ -1,7 +1,7 @@
 import { assertEquals, assertLess } from "@std/assert";
 import { it } from "@std/testing/bdd";
 
-import { RelationPayload } from "../../../types/adapter.ts";
+import { RelationPayload } from "../../types/adapter.ts";
 import type { EventStoreFactory } from "../mocks/events.ts";
 import { describe } from "../utilities/describe.ts";
 

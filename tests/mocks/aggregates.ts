@@ -1,7 +1,7 @@
-import { AggregateRoot } from "../../../libraries/aggregate.ts";
-import { AggregateFactory } from "../../../libraries/aggregate-factory.ts";
-import { makeId } from "../../../libraries/nanoid.ts";
-import { makeAggregateReducer } from "../../../libraries/reducer.ts";
+import { AggregateRoot } from "../../libraries/aggregate.ts";
+import { AggregateFactory } from "../../libraries/aggregate-factory.ts";
+import { makeId } from "../../libraries/nanoid.ts";
+import { makeAggregateReducer } from "../../libraries/reducer.ts";
 import { EventStoreFactory } from "./events.ts";
 
 export class User extends AggregateRoot<EventStoreFactory> {

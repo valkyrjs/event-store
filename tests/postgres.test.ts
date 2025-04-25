@@ -2,10 +2,10 @@ import { afterAll, afterEach, beforeAll, describe } from "@std/testing/bdd";
 import { PostgresTestContainer } from "@valkyr/testcontainers/postgres";
 import postgres from "postgres";
 
-import { PostgresAdapter } from "../../adapters/postgres/adapter.ts";
-import type { PostgresConnection } from "../../adapters/postgres/connection.ts";
-import { EventStore, type EventStoreHooks } from "../../libraries/event-store.ts";
-import { Projector } from "../../libraries/projector.ts";
+import { PostgresAdapter } from "../adapters/postgres/adapter.ts";
+import type { PostgresConnection } from "../adapters/postgres/connection.ts";
+import { EventStore, type EventStoreHooks } from "../libraries/event-store.ts";
+import { Projector } from "../libraries/projector.ts";
 import { aggregates } from "./mocks/aggregates.ts";
 import { events, EventStoreFactory } from "./mocks/events.ts";
 import testAddEvent from "./store/add-event.ts";

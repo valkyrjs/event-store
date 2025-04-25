@@ -2,7 +2,7 @@ import { assertEquals } from "@std/assert";
 import { it } from "@std/testing/bdd";
 import { nanoid } from "nanoid";
 
-import { makeId } from "../../../libraries/nanoid.ts";
+import { makeId } from "../../libraries/nanoid.ts";
 import type { EventStoreFactory } from "../mocks/events.ts";
 import { userPostReducer } from "../mocks/user-posts-reducer.ts";
 import { userReducer } from "../mocks/user-reducer.ts";

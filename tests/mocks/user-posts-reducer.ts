@@ -1,4 +1,4 @@
-import { makeReducer } from "../../../libraries/reducer.ts";
+import { makeReducer } from "../../libraries/reducer.ts";
 import { EventStoreFactory } from "./events.ts";
 
 export const userPostReducer = makeReducer<EventStoreFactory, UserPostState>(

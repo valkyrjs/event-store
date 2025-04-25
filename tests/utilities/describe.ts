@@ -1,8 +1,8 @@
 import { describe as desc } from "@std/testing/bdd";
 
-import { EventFactory } from "../../../libraries/event-factory.ts";
-import { EventStore, type EventStoreHooks } from "../../../libraries/event-store.ts";
-import { Projector } from "../../../libraries/projector.ts";
+import { EventFactory } from "../../libraries/event-factory.ts";
+import { EventStore, type EventStoreHooks } from "../../libraries/event-store.ts";
+import { Projector } from "../../libraries/projector.ts";
 
 export function describe<TEventFactory extends EventFactory>(
   name: string,

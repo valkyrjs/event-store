@@ -1,7 +1,7 @@
 import { assertEquals, assertObjectMatch } from "@std/assert";
 import { it } from "@std/testing/bdd";
 
-import { makeId } from "../../../libraries/nanoid.ts";
+import { makeId } from "../../libraries/nanoid.ts";
 import type { EventStoreFactory } from "../mocks/events.ts";
 import { describe } from "../utilities/describe.ts";
 

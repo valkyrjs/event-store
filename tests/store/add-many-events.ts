@@ -2,7 +2,7 @@ import { assertEquals, assertObjectMatch, assertRejects } from "@std/assert";
 import { it } from "@std/testing/bdd";
 import { nanoid } from "nanoid";
 
-import { EventValidationError } from "../../../mod.ts";
+import { EventValidationError } from "../../mod.ts";
 import type { EventStoreFactory } from "../mocks/events.ts";
 import { userReducer } from "../mocks/user-reducer.ts";
 import { describe } from "../utilities/describe.ts";

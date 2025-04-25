@@ -1,7 +1,7 @@
 import z from "zod";
 
-import { event } from "../../../libraries/event.ts";
-import { EventFactory } from "../../../libraries/event-factory.ts";
+import { event } from "../../libraries/event.ts";
+import { EventFactory } from "../../libraries/event-factory.ts";
 
 export const auditor = z.strictObject({ auditor: z.string() });
 
