@@ -2,7 +2,7 @@
   "dependencies": {
     "@std/async": "npm:@jsr/std__async@1.0.12",
     "@valkyr/db": "1.0.1",
-    "mongodb": "6.16.0",
+    "mongodb": "6.15.0",
     "nanoid": "5.1.5",
     "postgres": "3.4.5",
     "zod": "next"
