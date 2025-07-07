@@ -75,7 +75,9 @@ export class HLCForwardJumpError extends Error {
     readonly timejump: number,
     readonly tolerance: number,
   ) {
-    super(`HLC Violation: Detected a forward time jump of ${timejump}ms, which exceed the allowed tolerance of ${tolerance}ms.`);
+    super(
+      `HLC Violation: Detected a forward time jump of ${timejump}ms, which exceed the allowed tolerance of ${tolerance}ms.`,
+    );
   }
 }
 
@@ -96,7 +98,9 @@ export class HLCClockOffsetError extends Error {
     readonly offset: number,
     readonly maxOffset: number,
   ) {
-    super(`HLC Violation: Received time is ${offset}ms ahead of the wall time, exceeding the 'maxOffset' limit of ${maxOffset}ms.`);
+    super(
+      `HLC Violation: Received time is ${offset}ms ahead of the wall time, exceeding the 'maxOffset' limit of ${maxOffset}ms.`,
+    );
   }
 }
 

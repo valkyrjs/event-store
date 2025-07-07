@@ -1,5 +1,9 @@
 export abstract class ServiceError<TData = unknown> extends Error {
-  constructor(message: string, readonly status: number, readonly data?: TData) {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly data?: TData,
+  ) {
     super(message);
   }
 

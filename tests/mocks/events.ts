@@ -1,4 +1,4 @@
-import z from "zod";
+import z from "zod/v4";
 
 import { event } from "../../libraries/event.ts";
 import { EventFactory } from "../../libraries/event-factory.ts";
@@ -11,7 +11,10 @@ export const events = new EventFactory([
     .data(
       z.strictObject({
         name: z
-          .union([z.strictObject({ given: z.string(), family: z.string().optional() }), z.strictObject({ given: z.string().optional(), family: z.string() })])
+          .union([
+            z.strictObject({ given: z.string(), family: z.string().optional() }),
+            z.strictObject({ given: z.string().optional(), family: z.string() }),
+          ])
           .optional(),
         email: z.string(),
       }),

@@ -1,8 +1,14 @@
 import type { EventRecord } from "../libraries/event.ts";
 
-export type BatchedProjectorListeners<TRecord extends EventRecord = EventRecord> = Record<string, Set<BatchedProjectorListenerFn<TRecord>> | undefined>;
+export type BatchedProjectorListeners<TRecord extends EventRecord = EventRecord> = Record<
+  string,
+  Set<BatchedProjectorListenerFn<TRecord>> | undefined
+>;
 
-export type ProjectorListeners<TRecord extends EventRecord = EventRecord> = Record<string, Set<ProjectorListenerFn<TRecord>> | undefined>;
+export type ProjectorListeners<TRecord extends EventRecord = EventRecord> = Record<
+  string,
+  Set<ProjectorListenerFn<TRecord>> | undefined
+>;
 
 export type ProjectorMessage<TRecord extends EventRecord = EventRecord> = {
   record: TRecord;
@@ -11,11 +17,15 @@ export type ProjectorMessage<TRecord extends EventRecord = EventRecord> = {
 
 export type BatchedProjectorListenerFn<TRecord extends EventRecord = EventRecord> = (records: TRecord[]) => void;
 
-export type ProjectorListenerFn<TRecord extends EventRecord = EventRecord> = (record: TRecord, status: ProjectionStatus) => void;
+export type ProjectorListenerFn<TRecord extends EventRecord = EventRecord> = (
+  record: TRecord,
+  status: ProjectionStatus,
+) => void;
 
-export type ProjectionHandler<TRecord extends EventRecord = EventRecord, TSuccessData extends Record<string, any> | void = void> = TSuccessData extends void
-  ? (record: TRecord) => Promise<void>
-  : (record: TRecord) => Promise<TSuccessData>;
+export type ProjectionHandler<
+  TRecord extends EventRecord = EventRecord,
+  TSuccessData extends Record<string, any> | void = void,
+> = TSuccessData extends void ? (record: TRecord) => Promise<void> : (record: TRecord) => Promise<TSuccessData>;
 
 export type BatchedProjectionHandler<TRecord extends EventRecord = EventRecord> = (records: TRecord[]) => Promise<void>;
 

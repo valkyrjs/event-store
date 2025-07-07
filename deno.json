@@ -8,16 +8,12 @@
     "./postgres": "./adapters/postgres/adapter.ts"
   },
   "publish": {
-    "exclude": [
-      ".github",
-      ".vscode",
-      ".gitignore",
-      "tests"
-    ]
+    "exclude": [".github", ".vscode", ".gitignore", "tests"]
   },
   "tasks": {
     "check": "deno check ./mod.ts",
     "lint": "npx eslint -c eslint.config.mjs .",
+    "fmt": "npx prettier --write .",
     "test": "deno test --allow-all",
     "test:publish": "deno publish --dry-run",
     "ncu": "npx ncu -u -p npm"

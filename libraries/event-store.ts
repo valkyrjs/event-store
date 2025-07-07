@@ -118,7 +118,9 @@ export class EventStore<
    *
    * @param name - Aggregate name to retrieve.
    */
-  aggregate<TName extends TAggregateFactory["$aggregates"][number]["name"]>(name: TName): Extract<TAggregateFactory["$aggregates"][number], { name: TName }> {
+  aggregate<TName extends TAggregateFactory["$aggregates"][number]["name"]>(
+    name: TName,
+  ): Extract<TAggregateFactory["$aggregates"][number], { name: TName }> {
     return this.#aggregates.get(name) as Extract<TAggregateFactory["$aggregates"][number], { name: TName }>;
   }
 
@@ -128,7 +130,10 @@ export class EventStore<
    * @param aggregate - Aggregate to push events from.
    * @param settings  - Event settings which can modify insertion behavior.
    */
-  async pushAggregate(aggregate: InstanceType<TAggregateFactory["$aggregates"][number]>, settings?: EventsInsertSettings): Promise<void> {
+  async pushAggregate(
+    aggregate: InstanceType<TAggregateFactory["$aggregates"][number]>,
+    settings?: EventsInsertSettings,
+  ): Promise<void> {
     await aggregate.save(settings);
   }
 
@@ -144,7 +149,10 @@ export class EventStore<
    * @param aggregates - Aggregates to push events from.
    * @param settings   - Event settings which can modify insertion behavior.
    */
-  async pushManyAggregates(aggregates: InstanceType<TAggregateFactory["$aggregates"][number]>[], settings?: EventsInsertSettings): Promise<void> {
+  async pushManyAggregates(
+    aggregates: InstanceType<TAggregateFactory["$aggregates"][number]>[],
+    settings?: EventsInsertSettings,
+  ): Promise<void> {
     const events: this["$events"][number]["$record"][] = [];
     for (const aggregate of aggregates) {
       events.push(...aggregate.toPending());
@@ -209,7 +217,10 @@ export class EventStore<
    * @param records  - List of event records to insert.
    * @param settings - Event settings which can modify insertion behavior.
    */
-  async pushManyEvents(records: this["$events"][number]["$record"][], settings: EventsInsertSettings = {}): Promise<void> {
+  async pushManyEvents(
+    records: this["$events"][number]["$record"][],
+    settings: EventsInsertSettings = {},
+  ): Promise<void> {
     const events: this["$events"][number]["$record"][] = [];
     for (const record of records) {
       const event = this.#events.get(record.type);
@@ -270,7 +281,10 @@ export class EventStore<
    * @param streams - Streams to retrieve events for.
    * @param options - Read options to pass to the provider. (Optional)
    */
-  async getEventsByStreams(streams: string[], options?: EventReadOptions): Promise<TEventFactory["$events"][number]["$record"][]> {
+  async getEventsByStreams(
+    streams: string[],
+    options?: EventReadOptions,
+  ): Promise<TEventFactory["$events"][number]["$record"][]> {
     return this.events.getByStreams(streams, options);
   }
 
@@ -280,7 +294,10 @@ export class EventStore<
    * @param keys    - Relational keys to retrieve events for.
    * @param options - Relational logic options. (Optional)
    */
-  async getEventsByRelations(keys: string[], options?: EventReadOptions): Promise<TEventFactory["$events"][number]["$record"][]> {
+  async getEventsByRelations(
+    keys: string[],
+    options?: EventReadOptions,
+  ): Promise<TEventFactory["$events"][number]["$record"][]> {
     const streamIds = await this.relations.getByKeys(keys);
     if (streamIds.length === 0) {
       return [];
@@ -317,7 +334,10 @@ export class EventStore<
    * const state = await eventStore.reduce({ name: "foo:reducer", stream: "stream-id", reducer });
    * ```
    */
-  makeReducer<TState extends Unknown>(foldFn: ReducerLeftFold<TState, TEventFactory>, stateFn: ReducerState<TState>): Reducer<TEventFactory, TState> {
+  makeReducer<TState extends Unknown>(
+    foldFn: ReducerLeftFold<TState, TEventFactory>,
+    stateFn: ReducerState<TState>,
+  ): Reducer<TEventFactory, TState> {
     return makeReducer<TEventFactory, TState>(foldFn, stateFn);
   }
 
@@ -352,7 +372,9 @@ export class EventStore<
    * });
    * ```
    */
-  makeAggregateReducer<TAggregateRoot extends typeof AggregateRoot<TEventFactory>>(aggregate: TAggregateRoot): Reducer<TEventFactory, InstanceType<TAggregateRoot>> {
+  makeAggregateReducer<TAggregateRoot extends typeof AggregateRoot<TEventFactory>>(
+    aggregate: TAggregateRoot,
+  ): Reducer<TEventFactory, InstanceType<TAggregateRoot>> {
     return makeAggregateReducer<TEventFactory, TAggregateRoot>(aggregate);
   }
 
@@ -392,7 +414,9 @@ export class EventStore<
     }
 
     const events = (
-      stream !== undefined ? await this.getEventsByStreams([id], { ...query, cursor }) : await this.getEventsByRelations([id], { ...query, cursor })
+      stream !== undefined
+        ? await this.getEventsByStreams([id], { ...query, cursor })
+        : await this.getEventsByRelations([id], { ...query, cursor })
     ).concat(pending);
 
     if (events.length === 0) {
@@ -430,9 +454,16 @@ export class EventStore<
    * await eventStore.createSnapshot({ relation: `foo:${foo}:bars`, reducer });
    * ```
    */
-  async createSnapshot<TReducer extends Reducer>({ name, stream, relation, reducer, ...query }: ReduceQuery<TReducer>): Promise<void> {
+  async createSnapshot<TReducer extends Reducer>({
+    name,
+    stream,
+    relation,
+    reducer,
+    ...query
+  }: ReduceQuery<TReducer>): Promise<void> {
     const id = stream ?? relation;
-    const events = stream !== undefined ? await this.getEventsByStreams([id], query) : await this.getEventsByRelations([id], query);
+    const events =
+      stream !== undefined ? await this.getEventsByStreams([id], query) : await this.getEventsByRelations([id], query);
     if (events.length === 0) {
       return undefined;
     }
@@ -543,7 +574,10 @@ export type EventStoreHooks<TEventFactory extends EventFactory> = Partial<{
    * @param records  - List of event records inserted.
    * @param settings - Event insert settings used.
    */
-  onEventsInserted(records: TEventFactory["$events"][number]["$record"][], settings: EventsInsertSettings): Promise<void>;
+  onEventsInserted(
+    records: TEventFactory["$events"][number]["$record"][],
+    settings: EventsInsertSettings,
+  ): Promise<void>;
 
   /**
    * Triggered when an unhandled exception is thrown during `.pushEvent` and

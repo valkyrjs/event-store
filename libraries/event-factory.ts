@@ -47,7 +47,9 @@ export class EventFactory<const TEvents extends Event[] = Event[]> {
    *
    * @param type - Event type to retrieve.
    */
-  get<TType extends TEvents[number]["state"]["type"]>(type: TType): Extract<TEvents[number], { state: { type: TType } }> {
+  get<TType extends TEvents[number]["state"]["type"]>(
+    type: TType,
+  ): Extract<TEvents[number], { state: { type: TType } }> {
     return this.#index.get(type) as Extract<TEvents[number], { state: { type: TType } }>;
   }
 }

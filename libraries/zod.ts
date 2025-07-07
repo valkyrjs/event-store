@@ -1,4 +1,4 @@
-import { ZodError } from "zod";
+import { ZodError } from "zod/v4";
 
 export function toPrettyErrorLines(error: ZodError, padding: number = 0): string[] {
   const lines: string[] = [];

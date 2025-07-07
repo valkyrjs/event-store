@@ -25,7 +25,10 @@ export default describe<EventStoreFactory>(".pushAggregate", (getEventStore) => 
 
     assertEquals(records.length, 3);
 
-    assertObjectMatch(records[0], { stream: user.id, data: { name: { given: "Jane", family: "Doe" }, email: "jane.doe@fixture.none" } });
+    assertObjectMatch(records[0], {
+      stream: user.id,
+      data: { name: { given: "Jane", family: "Doe" }, email: "jane.doe@fixture.none" },
+    });
     assertObjectMatch(records[1], { stream: user.id, data: "John" });
     assertObjectMatch(records[2], { stream: user.id, data: "john.doe@fixture.none", meta: { auditor: "admin" } });
 

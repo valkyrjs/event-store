@@ -12,9 +12,13 @@ export class HLC {
 
   last: Timestamp;
 
-  constructor(
-    { time = getTime, maxOffset = 0, timeUpperBound = 0, toleratedForwardClockJump = 0, last }: Options = {},
-  ) {
+  constructor({
+    time = getTime,
+    maxOffset = 0,
+    timeUpperBound = 0,
+    toleratedForwardClockJump = 0,
+    last,
+  }: Options = {}) {
     this.time = time;
     this.maxTime = timeUpperBound > 0 ? timeUpperBound : Number.MAX_SAFE_INTEGER;
     this.maxOffset = maxOffset;

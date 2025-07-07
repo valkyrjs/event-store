@@ -26,7 +26,8 @@ const DB_NAME = "sandbox";
 const container = await PostgresTestContainer.start("postgres:17");
 const sql = postgres(container.url(DB_NAME));
 
-const eventStoreFn = async (options: { hooks?: EventStoreHooks<EventStoreFactory> } = {}) => getEventStore(sql, options);
+const eventStoreFn = async (options: { hooks?: EventStoreHooks<EventStoreFactory> } = {}) =>
+  getEventStore(sql, options);
 
 /*
  |--------------------------------------------------------------------------------
@@ -76,7 +77,9 @@ beforeAll(async () => {
 });
 
 afterEach(async () => {
-  await container.client(DB_NAME)`TRUNCATE "event_store"."relations","event_store"."events","event_store"."snapshots" CASCADE`;
+  await container.client(
+    DB_NAME,
+  )`TRUNCATE "event_store"."relations","event_store"."events","event_store"."snapshots" CASCADE`;
 });
 
 afterAll(async () => {
@@ -111,7 +114,10 @@ describe("Adapter > Postgres", () => {
  |--------------------------------------------------------------------------------
  */
 
-async function getEventStore(connection: PostgresConnection, { hooks = {} }: { hooks?: EventStoreHooks<EventStoreFactory> }) {
+async function getEventStore(
+  connection: PostgresConnection,
+  { hooks = {} }: { hooks?: EventStoreHooks<EventStoreFactory> },
+) {
   const store = new EventStore({
     adapter: new PostgresAdapter(connection, { schema: "event_store" }),
     events,

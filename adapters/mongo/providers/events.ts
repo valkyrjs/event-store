@@ -70,7 +70,10 @@ export class MongoEventsProvider implements EventsProvider {
    * @param options - Read options for modifying the result.
    */
   async getByStreams(streams: string[], options: EventReadOptions = {}): Promise<EventRecord[]> {
-    return (await this.#withReadOptions(this.collection.find({ stream: { $in: streams }, ...this.#withFilters(options) }), options)
+    return (await this.#withReadOptions(
+      this.collection.find({ stream: { $in: streams }, ...this.#withFilters(options) }),
+      options,
+    )
       .sort({ created: 1 })
       .toArray()
       .then(toParsedRecords(schema))) as EventRecord[];

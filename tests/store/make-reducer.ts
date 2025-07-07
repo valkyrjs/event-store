@@ -82,7 +82,12 @@ export default describe<EventStoreFactory>(".makeReducer", (getEventStore) => {
       }),
     );
 
-    const state = await store.reduce({ name: "user", stream: streamA, reducer: userReducer, filter: { types: ["user:created", "user:email-set"] } });
+    const state = await store.reduce({
+      name: "user",
+      stream: streamA,
+      reducer: userReducer,
+      filter: { types: ["user:created", "user:email-set"] },
+    });
 
     assertEquals(state?.name, { given: "John", family: "Doe" });
     assertEquals(state?.email, "jane.doe@fixture.none");
@@ -100,10 +105,31 @@ export default describe<EventStoreFactory>(".makeReducer", (getEventStore) => {
     const post2 = makeId();
     const post3 = makeId();
 
-    await store.pushEvent(store.event({ stream: post1, type: "post:created", data: { title: "Post #1", body: "Sample #1" }, meta: { auditor } }));
-    await store.pushEvent(store.event({ stream: post2, type: "post:created", data: { title: "Post #2", body: "Sample #2" }, meta: { auditor } }));
+    await store.pushEvent(
+      store.event({
+        stream: post1,
+        type: "post:created",
+        data: { title: "Post #1", body: "Sample #1" },
+        meta: { auditor },
+      }),
+    );
+    await store.pushEvent(
+      store.event({
+        stream: post2,
+        type: "post:created",
+        data: { title: "Post #2", body: "Sample #2" },
+        meta: { auditor },
+      }),
+    );
     await store.pushEvent(store.event({ stream: post2, type: "post:removed", meta: { auditor } }));
-    await store.pushEvent(store.event({ stream: post3, type: "post:created", data: { title: "Post #3", body: "Sample #3" }, meta: { auditor } }));
+    await store.pushEvent(
+      store.event({
+        stream: post3,
+        type: "post:created",
+        data: { title: "Post #3", body: "Sample #3" },
+        meta: { auditor },
+      }),
+    );
 
     const events = await store.getEventsByRelations([`user:${auditor}:posts`]);
 

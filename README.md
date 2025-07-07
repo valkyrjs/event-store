@@ -77,9 +77,9 @@ Once we have defined our configs and printed our events we create a new event st
 for `sqlite`, `postgres`, and `valkyr/db` which all works the same way. So for this example we will use the `sqlite`
 store.
 
- - Browser _(TODO)_
- - Mongo _(TODO)_
- - [Postgres](./adapters/postgres)
+- Browser _(TODO)_
+- Mongo _(TODO)_
+- [Postgres](./adapters/postgres)
 
 ### Reducers
 
@@ -92,26 +92,33 @@ import { makeReducer } from "@valkyr/event-store";
 
 import type { EventRecord } from "./generated/events.ts";
 
-const reducer = makeReducer<{
-  name: string;
-  email: string;
-}, EventRecord>((state, event) => {
-  switch (event.type) {
-    case "user:created": {
-      state.name = `${event.data.name.given} ${event.data.name.family}`;
-      state.email = event.data.email;
-      break;
+const reducer = makeReducer<
+  {
+    name: string;
+    email: string;
+  },
+  EventRecord
+>(
+  (state, event) => {
+    switch (event.type) {
+      case "user:created": {
+        state.name = `${event.data.name.given} ${event.data.name.family}`;
+        state.email = event.data.email;
+        break;
+      }
+      case "user:email-set": {
+        state.email = event.data.email;
+        break;
+      }
     }
-    case "user:email-set": {
-      state.email = event.data.email;
-      break;
-    }
-  }
-  return state;
-}, "user", () => ({
-  name: "",
-  email: "",
-}));
+    return state;
+  },
+  "user",
+  () => ({
+    name: "",
+    email: "",
+  }),
+);
 ```
 
 ### Aggreates
@@ -172,7 +179,7 @@ export class User extends AggregateRoot<EventRecord> {
 type Name = {
   given: string;
   family: string;
-}
+};
 ```
 
 ### Projectors
@@ -194,13 +201,12 @@ projector.on("user:created", async (record) => {
 
 ### Hydration in Event Processing
 
-When handling events in a distributed system or during event replay operations, it is important to differentiate between **new events** and **rehydrated events**.  
+When handling events in a distributed system or during event replay operations, it is important to differentiate between **new events** and **rehydrated events**.
 
-- **New Events (`hydrate: false`)**: These events are being processed for the first time. They will trigger all projection handlers, including `.once()`, `.on()`, and `.all()`.  
-- **Rehydrated Events (`hydrate: true`)**: These events are being replayed, either as part of a stream synchronization, system recovery, or reprocessing in a distributed environment. They **will not trigger** `.once()` handlers to avoid redundant side effects but will still be processed by `.on()` and `.all()` handlers where applicable.  
+- **New Events (`hydrate: false`)**: These events are being processed for the first time. They will trigger all projection handlers, including `.once()`, `.on()`, and `.all()`.
+- **Rehydrated Events (`hydrate: true`)**: These events are being replayed, either as part of a stream synchronization, system recovery, or reprocessing in a distributed environment. They **will not trigger** `.once()` handlers to avoid redundant side effects but will still be processed by `.on()` and `.all()` handlers where applicable.
 
 This mechanism ensures that critical one-time operations (such as sending emails or initiating external API calls) are **not repeated** unnecessarily while still allowing stateful projections to update their read models correctly.
-
 
 #### `.once("user:created", (event) => Promise<void>)`
 

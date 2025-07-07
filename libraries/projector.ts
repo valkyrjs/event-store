@@ -132,7 +132,10 @@ export class Projector<TEventFactory extends EventFactory = EventFactory> {
    */
   once<
     TType extends TEventFactory["$events"][number]["$record"]["type"],
-    TRecord extends TEventFactory["$events"][number]["$record"] = Extract<TEventFactory["$events"][number]["$record"], { type: TType }>,
+    TRecord extends TEventFactory["$events"][number]["$record"] = Extract<
+      TEventFactory["$events"][number]["$record"],
+      { type: TType }
+    >,
     TSuccessData extends Record<string, any> | void = void,
   >(
     type: TType,
@@ -175,7 +178,10 @@ export class Projector<TEventFactory extends EventFactory = EventFactory> {
    */
   on<
     TType extends TEventFactory["$events"][number]["$record"]["type"],
-    TRecord extends TEventFactory["$events"][number]["$record"] = Extract<TEventFactory["$events"][number]["$record"], { type: TType }>,
+    TRecord extends TEventFactory["$events"][number]["$record"] = Extract<
+      TEventFactory["$events"][number]["$record"],
+      { type: TType }
+    >,
   >(type: TType, handler: ProjectionHandler<TRecord>): Subscription {
     return this.#subscribe(type, FILTER_CONTINUOUS, handler as any);
   }
@@ -194,7 +200,10 @@ export class Projector<TEventFactory extends EventFactory = EventFactory> {
    */
   all<
     TType extends TEventFactory["$events"][number]["$record"]["type"],
-    TRecord extends TEventFactory["$events"][number]["$record"] = Extract<TEventFactory["$events"][number]["$record"], { type: TType }>,
+    TRecord extends TEventFactory["$events"][number]["$record"] = Extract<
+      TEventFactory["$events"][number]["$record"],
+      { type: TType }
+    >,
   >(type: TType, handler: ProjectionHandler<TRecord>): Subscription {
     return this.#subscribe(type, FILTER_ALL, handler as any);
   }

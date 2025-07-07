@@ -35,9 +35,11 @@ export class PostgresRelationsProvider implements RelationsProvider {
    * @param stream - Stream to add to the key.
    */
   async insert(key: string, stream: string): Promise<void> {
-    await this.db.sql`INSERT INTO ${this.table} (key, stream) VALUES (${key}, ${stream}) ON CONFLICT DO NOTHING`.catch((error) => {
-      throw new Error(`EventStore > 'relations.insert' failed with postgres error: ${error.message}`);
-    });
+    await this.db.sql`INSERT INTO ${this.table} (key, stream) VALUES (${key}, ${stream}) ON CONFLICT DO NOTHING`.catch(
+      (error) => {
+        throw new Error(`EventStore > 'relations.insert' failed with postgres error: ${error.message}`);
+      },
+    );
   }
 
   /**
@@ -107,7 +109,9 @@ export class PostgresRelationsProvider implements RelationsProvider {
     await this.db.sql
       .begin(async (sql) => {
         for (let i = 0; i < relations.length; i += batchSize) {
-          const conditions = relations.slice(i, i + batchSize).map(({ key, stream }) => `(key = '${key}' AND stream = '${stream}')`);
+          const conditions = relations
+            .slice(i, i + batchSize)
+            .map(({ key, stream }) => `(key = '${key}' AND stream = '${stream}')`);
           await sql`DELETE FROM ${this.table} WHERE ${this.db.sql.unsafe(conditions.join(" OR "))}`;
         }
       })

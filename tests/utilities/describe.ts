@@ -11,7 +11,9 @@ export function describe<TEventFactory extends EventFactory>(
   return (getEventStore: EventStoreFn<TEventFactory>) => desc(name, () => runner(getEventStore));
 }
 
-type EventStoreFn<TEventFactory extends EventFactory> = (options?: { hooks?: EventStoreHooks<TEventFactory> }) => Promise<{
+type EventStoreFn<TEventFactory extends EventFactory> = (options?: {
+  hooks?: EventStoreHooks<TEventFactory>;
+}) => Promise<{
   store: EventStore<TEventFactory, any, any>;
   projector: Projector<TEventFactory>;
 }>;

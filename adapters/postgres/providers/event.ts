@@ -76,7 +76,10 @@ export class PostgresEventsProvider implements EventsProvider {
    * @param stream  - Stream to fetch events for.
    * @param options - Read options for modifying the result.
    */
-  async getByStream(stream: string, { filter, cursor, direction, limit }: EventReadOptions = {}): Promise<EventRecord[]> {
+  async getByStream(
+    stream: string,
+    { filter, cursor, direction, limit }: EventReadOptions = {},
+  ): Promise<EventRecord[]> {
     return this.db.sql<PGEventRecord[]>`
       SELECT * FROM ${this.table} 
       WHERE 
@@ -94,7 +97,10 @@ export class PostgresEventsProvider implements EventsProvider {
    * @param streams - Stream to get events for.
    * @param options - Read options for modifying the result.
    */
-  async getByStreams(streams: string[], { filter, cursor, direction, limit }: EventReadOptions = {}): Promise<EventRecord[]> {
+  async getByStreams(
+    streams: string[],
+    { filter, cursor, direction, limit }: EventReadOptions = {},
+  ): Promise<EventRecord[]> {
     return this.db.sql<PGEventRecord[]>`
       SELECT * FROM ${this.table} 
       WHERE 
@@ -112,7 +118,9 @@ export class PostgresEventsProvider implements EventsProvider {
    * @param id - Event id.
    */
   async getById(id: string): Promise<EventRecord | undefined> {
-    return this.db.sql<PGEventRecord[]>`SELECT * FROM ${this.table} WHERE id = ${id}`.then(this.#fromDriver).then(([record]) => record);
+    return this.db.sql<PGEventRecord[]>`SELECT * FROM ${this.table} WHERE id = ${id}`
+      .then(this.#fromDriver)
+      .then(([record]) => record);
   }
 
   /**

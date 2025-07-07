@@ -1,5 +1,5 @@
 import type { Db, WithId } from "mongodb";
-import type { z, ZodObject } from "zod";
+import type { z, ZodObject } from "zod/v4";
 
 /**
  * Take a list of records and run it through the given zod parser. This
@@ -9,7 +9,9 @@ import type { z, ZodObject } from "zod";
  *
  * @param parser - Zod parser to run the documents through.
  */
-export function toParsedRecords<TSchema extends ZodObject>(parser: TSchema): (documents: WithId<object>[]) => z.infer<TSchema>[] {
+export function toParsedRecords<TSchema extends ZodObject>(
+  parser: TSchema,
+): (documents: WithId<object>[]) => z.infer<TSchema>[] {
   return parser.array().parse;
 }
 
@@ -21,7 +23,9 @@ export function toParsedRecords<TSchema extends ZodObject>(parser: TSchema): (do
  *
  * @param parser - Zod parser to run the document through.
  */
-export function toParsedRecord<TSchema extends ZodObject>(parser: TSchema): (document: WithId<object> | null) => z.infer<TSchema> | undefined {
+export function toParsedRecord<TSchema extends ZodObject>(
+  parser: TSchema,
+): (document: WithId<object> | null) => z.infer<TSchema> | undefined {
   return function (document) {
     if (document === null) {
       return undefined;

@@ -8,9 +8,10 @@ import { EventFactory } from "./event-factory.ts";
  *
  * @param aggregate - Aggregate to instantiate and create an instance of.
  */
-export function makeAggregateReducer<TEventFactory extends EventFactory, TAggregateRoot extends typeof AggregateRoot<TEventFactory>>(
-  aggregate: TAggregateRoot,
-): Reducer<TEventFactory, InstanceType<TAggregateRoot>> {
+export function makeAggregateReducer<
+  TEventFactory extends EventFactory,
+  TAggregateRoot extends typeof AggregateRoot<TEventFactory>,
+>(aggregate: TAggregateRoot): Reducer<TEventFactory, InstanceType<TAggregateRoot>> {
   return {
     from(snapshot: Unknown) {
       return aggregate.from(snapshot);
@@ -45,7 +46,10 @@ export function makeReducer<TEventFactory extends EventFactory, TState extends U
   };
 }
 
-export type Reducer<TEventFactory extends EventFactory = EventFactory, TState extends Record<string, unknown> | AggregateRoot<TEventFactory> = any> = {
+export type Reducer<
+  TEventFactory extends EventFactory = EventFactory,
+  TState extends Record<string, unknown> | AggregateRoot<TEventFactory> = any,
+> = {
   /**
    * Return result directly from a snapshot that does not have any subsequent
    * events to fold onto a state.
@@ -80,10 +84,10 @@ export type Reducer<TEventFactory extends EventFactory = EventFactory, TState ex
  * })
  * ```
  */
-export type ReducerLeftFold<TState extends Record<string, unknown> = any, TEventFactory extends EventFactory = EventFactory> = (
-  state: TState,
-  event: TEventFactory["$events"][number]["$record"],
-) => TState;
+export type ReducerLeftFold<
+  TState extends Record<string, unknown> = any,
+  TEventFactory extends EventFactory = EventFactory,
+> = (state: TState, event: TEventFactory["$events"][number]["$record"]) => TState;
 
 export type ReducerState<TState extends Unknown> = () => TState;
 

@@ -8,7 +8,11 @@ export default describe<EventStoreFactory>(".makeAggregateReducer", (getEventSto
   it("should reduce a user", async () => {
     const { store } = await getEventStore();
 
-    const userA = await store.aggregate("user").create({ given: "John", family: "Doe" }, "john.doe@fixture.none").setGivenName("Jane").save();
+    const userA = await store
+      .aggregate("user")
+      .create({ given: "John", family: "Doe" }, "john.doe@fixture.none")
+      .setGivenName("Jane")
+      .save();
 
     await userA.snapshot();
 

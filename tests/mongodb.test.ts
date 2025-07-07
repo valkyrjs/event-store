@@ -2,10 +2,10 @@ import { afterAll, afterEach, beforeAll, describe } from "@std/testing/bdd";
 import { MongoTestContainer } from "@valkyr/testcontainers/mongodb";
 
 import { MongoAdapter, register } from "../adapters/mongo/adapter.ts";
-import { EventStore, EventStoreHooks } from "../libraries/event-store.ts";
+import { EventStore, type EventStoreHooks } from "../libraries/event-store.ts";
 import { Projector } from "../libraries/projector.ts";
 import { aggregates } from "./mocks/aggregates.ts";
-import { events, EventStoreFactory } from "./mocks/events.ts";
+import { events, type EventStoreFactory } from "./mocks/events.ts";
 import testAddEvent from "./store/add-event.ts";
 import testAddManyEvents from "./store/add-many-events.ts";
 import testCreateSnapshot from "./store/create-snapshot.ts";
@@ -38,7 +38,11 @@ beforeAll(async () => {
 
 afterEach(async () => {
   const db = container.client.db(DB_NAME);
-  await Promise.all([db.collection("events").deleteMany({}), db.collection("relations").deleteMany({}), db.collection("snapshots").deleteMany({})]);
+  await Promise.all([
+    db.collection("events").deleteMany({}),
+    db.collection("relations").deleteMany({}),
+    db.collection("snapshots").deleteMany({}),
+  ]);
 });
 
 afterAll(async () => {
