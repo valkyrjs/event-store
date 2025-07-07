@@ -4,17 +4,17 @@
     "npm:@jsr/std__assert@1.0.13": "1.0.13",
     "npm:@jsr/std__async@1.0.13": "1.0.13",
     "npm:@jsr/std__testing@1.0.14": "1.0.14",
-    "npm:@jsr/valkyr__testcontainers@2.0.1": "2.0.1",
-    "npm:@valkyr/db@^1.0.1": "1.0.1",
+    "npm:@jsr/valkyr__testcontainers@2": "2.0.1",
+    "npm:@valkyr/db@1.0.1": "1.0.1",
     "npm:eslint-plugin-simple-import-sort@12.1.1": "12.1.1_eslint@9.30.1",
     "npm:eslint@9.30.1": "9.30.1",
     "npm:fake-indexeddb@6.0.1": "6.0.1",
-    "npm:mongodb@6.17.0": "6.17.0",
-    "npm:nanoid@5.1.5": "5.1.5",
-    "npm:postgres@3.4.7": "3.4.7",
+    "npm:mongodb@6": "6.17.0",
+    "npm:nanoid@5": "5.1.5",
+    "npm:postgres@3": "3.4.7",
     "npm:prettier@3.6.2": "3.6.2",
     "npm:typescript-eslint@8.35.1": "8.35.1_eslint@9.30.1_typescript@5.8.3_@typescript-eslint+parser@8.35.1__eslint@9.30.1__typescript@5.8.3",
-    "npm:zod@3.25.75": "3.25.75"
+    "npm:zod@3.25": "3.25.75"
   },
   "npm": {
     "@eslint-community/eslint-utils@4.7.0_eslint@9.30.1": {
@@ -889,17 +889,17 @@
         "npm:@jsr/std__assert@1.0.13",
         "npm:@jsr/std__async@1.0.13",
         "npm:@jsr/std__testing@1.0.14",
-        "npm:@jsr/valkyr__testcontainers@2.0.1",
-        "npm:@valkyr/db@^1.0.1",
+        "npm:@jsr/valkyr__testcontainers@2",
+        "npm:@valkyr/db@1.0.1",
         "npm:eslint-plugin-simple-import-sort@12.1.1",
         "npm:eslint@9.30.1",
         "npm:fake-indexeddb@6.0.1",
-        "npm:mongodb@6.17.0",
-        "npm:nanoid@5.1.5",
-        "npm:postgres@3.4.7",
+        "npm:mongodb@6",
+        "npm:nanoid@5",
+        "npm:postgres@3",
         "npm:prettier@3.6.2",
         "npm:typescript-eslint@8.35.1",
-        "npm:zod@3.25.75"
+        "npm:zod@3.25"
       ]
     }
   }
