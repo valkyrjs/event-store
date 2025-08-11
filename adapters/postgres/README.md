@@ -14,24 +14,15 @@ Once we have defined our configs and printed our events we create a new postgres
 import { makePostgresEventStore } from "@valkyr/event-store/postgres";
 import postgres from "postgres";
 
-import { type Event, type EventRecord, events, validators } from "./generated/events.ts";
+import { events, type Events } from "./events.ts";
 
-export const eventStore = makePostgresEventStore<Event>({
-  connection: () => postgres("postgres://${string}:${string}@${string}:${number}/${string}"), // lazy loaded connection
-  schema: "event_store",
+export const eventStore = new EventStore({
+  adapter: new PostgresAdapter(connection, { schema: "event_store" }),
   events,
-  validators,
-  hooks: {
-    async onError(error) {
-      // when the event store throws unhandled errors they will end up in
-      // this location that can be further logged in the systems own logger
-      // if onError hook is not provided all unhandled errors are logged
-      // through the `console.error` method.
-    },
-  },
+  hooks,
 });
 
-const projector = new Projector<EventRecord>();
+const projector = new Projector<Events>();
 
 eventStore.onEventsInserted(async (records, { batch }) => {
   // trigger event side effects here such as sending the records through

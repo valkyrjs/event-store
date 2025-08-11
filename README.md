@@ -30,35 +30,66 @@ may not be up to date.
 ```ts
 import { makeReducer } from "@valkyr/event-store";
 
-import type { EventRecord } from "./generated/events.ts";
+import type { Events } from "./events.ts";
 
-const reducer = makeReducer<
-  {
-    name: string;
-    email: string;
-  },
-  EventRecord
->(
+export const userReducer = makeReducer<Events, UserState>(
   (state, event) => {
     switch (event.type) {
       case "user:created": {
-        state.name = `${event.data.name.given} ${event.data.name.family}`;
+        state.name.given = event.data.name?.given ?? "";
+        state.name.family = event.data.name?.family ?? "";
         state.email = event.data.email;
         break;
       }
+      case "user:name:given-set": {
+        state.name.given = event.data;
+        break;
+      }
+      case "user:name:family-set": {
+        state.name.family = event.data;
+        break;
+      }
       case "user:email-set": {
-        state.email = event.data.email;
+        state.email = event.data;
+        break;
+      }
+      case "user:activated": {
+        state.active = true;
+        break;
+      }
+      case "user:deactivated": {
+        state.active = false;
         break;
       }
     }
     return state;
   },
-  "user",
   () => ({
-    name: "",
+    name: {
+      given: "",
+      family: "",
+    },
     email: "",
+    active: true,
+    posts: {
+      list: [],
+      count: 0,
+    },
   }),
 );
+
+type UserState = {
+  name: {
+    given: string;
+    family: string;
+  };
+  email: string;
+  active: boolean;
+  posts: {
+    list: string[];
+    count: number;
+  };
+};
 ```
 
 ### Aggreates
@@ -70,48 +101,89 @@ The benefit of this is that we can create various helper methods on the aggregat
 query the aggregated state.
 
 ```ts
-import { AggregateRoot, makeAggregateReducer } from "@valkyr/event-store";
+import { AggregateRoot } from "@valkyr/event-store";
 
-import type { EventRecord } from "./generated/events.ts";
-import { eventStore } from "./event-store.ts";
+import type { Events } from "./events.ts";
 
-export class User extends AggregateRoot<EventRecord> {
-  name!: Name;
-  email!: string;
+export class User extends AggregateRoot<Events> {
+  static override readonly name = "user";
+
+  name: Name = {
+    given: "",
+    family: "",
+  };
+  email: string = "";
+  active: boolean = true;
+  posts: UserPosts = {
+    list: [],
+    count: 0,
+  };
 
   // -------------------------------------------------------------------------
-  // Factories
+  // Reducer
   // -------------------------------------------------------------------------
 
-  static #reducer = makeAggregateReducer(User, "user");
-
-  static async getById(userId: string): Promise<User | undefined> {
-    return eventStore.reduce({ stream: userId, reducer: this.#reducer });
-  }
-
-  // -------------------------------------------------------------------------
-  // Folder
-  // -------------------------------------------------------------------------
-
-  with(event: EventRecord) {
+  with(event: Events["$events"][number]["$record"]) {
     switch (event.type) {
-      case "user:created": {
-        this.name = event.data.name;
-        this.email = event.data.email;
+      case "user:name:given-set": {
+        this.name.given = event.data;
+        break;
+      }
+      case "user:name:family-set": {
+        this.name.family = event.data;
         break;
       }
       case "user:email-set": {
-        this.email = event.data.email;
+        this.email = event.data;
+        break;
+      }
+      case "user:activated": {
+        this.active = true;
+        break;
+      }
+      case "user:deactivated": {
+        this.active = false;
         break;
       }
     }
   }
 
   // -------------------------------------------------------------------------
-  // Utilities
+  // Actions
   // -------------------------------------------------------------------------
 
-  fullName() {
+  setGivenName(given: string): this {
+    return this.push({
+      type: "user:name:given-set",
+      stream: this.id,
+      data: given,
+      meta: { auditor: "foo" },
+    });
+  }
+
+  setFamilyName(family: string): this {
+    return this.push({
+      type: "user:name:family-set",
+      stream: this.id,
+      data: family,
+      meta: { auditor: "foo" },
+    });
+  }
+
+  setEmail(email: string, auditor: string): this {
+    return this.push({
+      type: "user:email-set",
+      stream: this.id,
+      data: email,
+      meta: { auditor },
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Helpers
+  // -------------------------------------------------------------------------
+
+  fullName(): string {
     return `${this.name.given} ${this.name.family}`;
   }
 }
@@ -119,6 +191,11 @@ export class User extends AggregateRoot<EventRecord> {
 type Name = {
   given: string;
   family: string;
+};
+
+type UserPosts = {
+  list: string[];
+  count: number;
 };
 ```
 
@@ -132,10 +209,27 @@ A projector is registered for a specific event type, and can have multiple handl
 types of listeners, `once`, `on`, and `all`.
 
 ```ts
-import { projector } from "./event-store.ts";
+import { Projector } from "@valkyr/event-store";
 
-projector.on("user:created", async (record) => {
-  // do something with the event record ...
+import store from "./event-store.ts";
+import type { Events } from "./events.ts";
+
+const projector = new Projector<Events>();
+
+if (hooks.onEventsInserted === undefined) {
+  store.onEventsInserted(async (records, { batch }) => {
+    if (batch !== undefined) {
+      await projector.pushMany(batch, records);
+    } else {
+      for (const record of records) {
+        await projector.push(record, { hydrated: false, outdated: false });
+      }
+    }
+  });
+}
+
+projector.on("event", async (record) => {
+  // handle event
 });
 ```
 
