@@ -2,7 +2,6 @@ import type { AnyEventStore, EventsInsertSettings } from "../libraries/event-sto
 import type { Unknown } from "../types/common.ts";
 import { AggregateSnapshotViolation, AggregateStreamViolation } from "./errors.ts";
 import { EventFactory } from "./event-factory.ts";
-import { makeAggregateReducer } from "./reducer.ts";
 
 /**
  * Represents an aggregate root in an event-sourced system.
@@ -20,6 +19,9 @@ export abstract class AggregateRoot<TEventFactory extends EventFactory> {
    */
   static readonly name: string;
 
+  /**
+   * Instance used for internal interaction with the originating event store.
+   */
   readonly #store: AnyEventStore;
 
   /**
@@ -52,11 +54,15 @@ export abstract class AggregateRoot<TEventFactory extends EventFactory> {
     this.#stream = value;
   }
 
-  get id() {
+  get id(): string {
     if (this.#stream === undefined) {
       this.#stream = crypto.randomUUID();
     }
     return this.#stream;
+  }
+
+  get #self(): typeof AggregateRoot<TEventFactory> {
+    return this.constructor as typeof AggregateRoot<TEventFactory>;
   }
 
   /**
@@ -134,6 +140,27 @@ export abstract class AggregateRoot<TEventFactory extends EventFactory> {
   // -------------------------------------------------------------------------
 
   /**
+   * Generates a new snapshot for the aggregate instance.
+   *
+   * If the instance has any pending events, they will be commited before
+   * the snapshot operation is executed. If there are special settings for
+   * any pending events, make sure to `.save()` before snapshotting.
+   */
+  async snapshot() {
+    const stream = this.#stream;
+    if (stream === undefined) {
+      throw new AggregateSnapshotViolation(this.#self.name);
+    }
+    await this.save();
+    const reducer = this.#store.aggregate.reducer(this.#self);
+    await this.#store.createSnapshot({
+      name: this.#self.name,
+      stream,
+      reducer,
+    });
+  }
+
+  /**
    * Saves all pending events to the attached event store.
    *
    * @param settings - Event insert settings.
@@ -148,18 +175,6 @@ export abstract class AggregateRoot<TEventFactory extends EventFactory> {
       this.flush();
     }
     return this;
-  }
-
-  async snapshot() {
-    const stream = this.#stream;
-    if (stream === undefined) {
-      throw new AggregateSnapshotViolation((this.constructor as typeof AggregateRoot<TEventFactory>).name);
-    }
-    await this.#store.createSnapshot({
-      name: this.constructor.name,
-      stream,
-      reducer: makeAggregateReducer(this.#store, this.constructor as typeof AggregateRoot<TEventFactory>),
-    });
   }
 
   /**

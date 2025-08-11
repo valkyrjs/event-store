@@ -184,6 +184,17 @@ export class EventStore<TEventFactory extends EventFactory, TEventStoreAdapter e
     ): InstanceType<TAggregate> => {
       return aggregate.from(this, snapshot);
     },
+
+    /**
+     * Create a new reducer instance for the given aggregate.
+     *
+     * @param aggregate - Aggregate to create a reducer for.
+     */
+    reducer: <TAggregate extends AggregateRootClass<TEventFactory>>(
+      aggregate: TAggregate,
+    ): Reducer<TEventFactory, InstanceType<TAggregate>> => {
+      return makeAggregateReducer(this, aggregate);
+    },
   };
 
   /*
