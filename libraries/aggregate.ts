@@ -153,7 +153,7 @@ export abstract class AggregateRoot<TEventFactory extends EventFactory> {
     }
     await this.save();
     const reducer = this.#store.aggregate.reducer(this.#self);
-    await this.#store.createSnapshot({
+    await this.#store.snapshot.create({
       name: this.#self.name,
       stream,
       reducer,

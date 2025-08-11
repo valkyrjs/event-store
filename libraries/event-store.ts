@@ -121,6 +121,14 @@ export class EventStore<TEventFactory extends EventFactory, TEventStoreAdapter e
      *
      * @param aggregates - Aggregates to push events from.
      * @param settings   - Event settings which can modify insertion behavior.
+     *
+     * @example
+     * ```ts
+     * const foo = eventStore.aggregate.from(Foo).setEvent(...);
+     * const bar = eventStore.aggregate.from(Bar).setEvent(...);
+     *
+     * await eventStore.aggregate.push([foo, bar]);
+     * ```
      */
     push: async (
       aggregates: InstanceType<AggregateRootClass<TEventFactory>>[],
@@ -141,6 +149,11 @@ export class EventStore<TEventFactory extends EventFactory, TEventStoreAdapter e
      *
      * @param name   - Aggregate to instantiate.
      * @param stream - Stream to retrieve snapshot from.
+     *
+     * @example
+     * ```ts
+     * const state = await eventStore.aggregate.getByStream(Aggregate, "stream");
+     * ```
      */
     getByStream: async <TAggregate extends AggregateRootClass<TEventFactory>>(
       aggregate: TAggregate,
@@ -159,6 +172,11 @@ export class EventStore<TEventFactory extends EventFactory, TEventStoreAdapter e
      *
      * @param name     - Aggregate to instantiate.
      * @param relation - Relation to retrieve snapshot from.
+     *
+     * @example
+     * ```ts
+     * const state = await eventStore.aggregate.getByRelation(Aggregate, "relation");
+     * ```
      */
     getByRelation: async <TAggregate extends AggregateRootClass<TEventFactory>>(
       aggregate: TAggregate,
@@ -177,6 +195,11 @@ export class EventStore<TEventFactory extends EventFactory, TEventStoreAdapter e
      *
      * @param aggregate - Aggregate to instantiate.
      * @param snapshot  - Optional snapshot to instantiate aggregate with.
+     *
+     * @example
+     * ```ts
+     * const foo = await eventStore.aggregate.from(Foo);
+     * ```
      */
     from: <TAggregate extends AggregateRootClass<TEventFactory>>(
       aggregate: TAggregate,
@@ -189,6 +212,12 @@ export class EventStore<TEventFactory extends EventFactory, TEventStoreAdapter e
      * Create a new reducer instance for the given aggregate.
      *
      * @param aggregate - Aggregate to create a reducer for.
+     *
+     * @example
+     * ```ts
+     * const reducer = eventStore.aggregate.reducer(Aggregate);
+     * const state = await eventStore.reduce({ name: "foo:reducer", stream: "stream-id", reducer });
+     * ```
      */
     reducer: <TAggregate extends AggregateRootClass<TEventFactory>>(
       aggregate: TAggregate,
@@ -382,18 +411,11 @@ export class EventStore<TEventFactory extends EventFactory, TEventStoreAdapter e
    * @param pending - List of non comitted events to append to the server events.
    *
    * @example
-   *
    * ```ts
+   * const reducer = eventStore.aggregate.reducer(Aggregate);
    * const state = await eventStore.reduce({ stream, reducer });
-   * ```
-   *
-   * @example
-   *
-   * ```ts
    * const state = await eventStore.reduce({ relation: `foo:${foo}:bars`, reducer });
    * ```
-   *
-   * Reducers are created through the `.makeReducer` and `.makeAggregateReducer` method.
    */
   async reduce<TReducer extends Reducer>(
     { name, stream, relation, reducer, ...query }: ReduceQuery<TReducer>,
@@ -404,7 +426,7 @@ export class EventStore<TEventFactory extends EventFactory, TEventStoreAdapter e
     let state: InferReducerState<TReducer> | undefined;
     let cursor: string | undefined;
 
-    const snapshot = await this.getSnapshot(name, id);
+    const snapshot = await this.snapshot.get(name, id);
     if (snapshot !== undefined) {
       cursor = snapshot.cursor;
       state = snapshot.state;
@@ -436,99 +458,92 @@ export class EventStore<TEventFactory extends EventFactory, TEventStoreAdapter e
    |--------------------------------------------------------------------------------
    */
 
-  /**
-   * Create a new snapshot for the given stream/relation and reducer.
-   *
-   * @param query - Reducer query to create snapshot from.
-   *
-   * @example
-   * ```ts
-   * await eventStore.createSnapshot({ stream, reducer });
-   * ```
-   *
-   * @example
-   * ```ts
-   * await eventStore.createSnapshot({ relation: `foo:${foo}:bars`, reducer });
-   * ```
-   */
-  async createSnapshot<TReducer extends Reducer>({
-    name,
-    stream,
-    relation,
-    reducer,
-    ...query
-  }: ReduceQuery<TReducer>): Promise<void> {
-    const id = stream ?? relation;
-    const events =
-      stream !== undefined ? await this.getEventsByStreams([id], query) : await this.getEventsByRelations([id], query);
-    if (events.length === 0) {
-      return undefined;
-    }
-    await this.snapshots.insert(name, id, events.at(-1)!.created, reducer.reduce(events));
-  }
+  readonly snapshot = {
+    /**
+     * Create a new snapshot for the given stream/relation and reducer.
+     *
+     * @param query - Reducer query to create snapshot from.
+     *
+     * @example
+     * ```ts
+     * await eventStore.createSnapshot({ stream, reducer });
+     * await eventStore.createSnapshot({ relation: `foo:${foo}:bars`, reducer });
+     * ```
+     */
+    create: async <TReducer extends Reducer>({
+      name,
+      stream,
+      relation,
+      reducer,
+      ...query
+    }: ReduceQuery<TReducer>): Promise<void> => {
+      const id = stream ?? relation;
+      const events =
+        stream !== undefined
+          ? await this.getEventsByStreams([id], query)
+          : await this.getEventsByRelations([id], query);
+      if (events.length === 0) {
+        return undefined;
+      }
+      await this.snapshots.insert(name, id, events.at(-1)!.created, reducer.reduce(events));
+    },
 
-  /**
-   * Get an entity state snapshot from the database. These are useful for when we
-   * want to reduce the amount of events that has to be processed when fetching
-   * state history for a reducer.
-   *
-   * @param streamOrRelation - Stream, or Relation to get snapshot for.
-   * @param reducer          - Reducer to get snapshot for.
-   *
-   * @example
-   * ```ts
-   * const snapshot = await eventStore.getSnapshot("foo:reducer", stream);
-   * console.log(snapshot);
-   * // {
-   * //   cursor: "jxubdY-0",
-   * //   state: {
-   * //     foo: "bar"
-   * //   }
-   * // }
-   * ```
-   *
-   * @example
-   * ```ts
-   * const snapshot = await eventStore.getSnapshot("foo:reducer", `foo:${foo}:bars`);
-   * console.log(snapshot);
-   * // {
-   * //   cursor: "jxubdY-0",
-   * //   state: {
-   * //     count: 1
-   * //   }
-   * // }
-   * ```
-   */
-  async getSnapshot<TReducer extends Reducer, TState = InferReducerState<TReducer>>(
-    name: string,
-    streamOrRelation: string,
-  ): Promise<{ cursor: string; state: TState } | undefined> {
-    const snapshot = await this.snapshots.getByStream(name, streamOrRelation);
-    if (snapshot === undefined) {
-      return undefined;
-    }
-    return { cursor: snapshot.cursor, state: snapshot.state as TState };
-  }
+    /**
+     * Get an entity state snapshot from the database. These are useful for when we
+     * want to reduce the amount of events that has to be processed when fetching
+     * state history for a reducer.
+     *
+     * @param streamOrRelation - Stream, or Relation to get snapshot for.
+     * @param reducer          - Reducer to get snapshot for.
+     *
+     * @example
+     * ```ts
+     * const snapshot = await eventStore.getSnapshot("foo:reducer", stream);
+     * console.log(snapshot);
+     * // {
+     * //   cursor: "jxubdY-0",
+     * //   state: {
+     * //     foo: "bar"
+     * //   }
+     * // }
+     *
+     * const snapshot = await eventStore.getSnapshot("foo:reducer", `foo:${foo}:bars`);
+     * console.log(snapshot);
+     * // {
+     * //   cursor: "jxubdY-0",
+     * //   state: {
+     * //     count: 1
+     * //   }
+     * // }
+     * ```
+     */
+    get: async <TReducer extends Reducer, TState = InferReducerState<TReducer>>(
+      name: string,
+      streamOrRelation: string,
+    ): Promise<{ cursor: string; state: TState } | undefined> => {
+      const snapshot = await this.snapshots.getByStream(name, streamOrRelation);
+      if (snapshot === undefined) {
+        return undefined;
+      }
+      return { cursor: snapshot.cursor, state: snapshot.state as TState };
+    },
 
-  /**
-   * Delete a snapshot.
-   *
-   * @param streamOrRelation - Stream, or Relation to delete snapshot for.
-   * @param reducer          - Reducer to remove snapshot for.
-   *
-   * @example
-   * ```ts
-   * await eventStore.deleteSnapshot("foo:reducer", stream);
-   * ```
-   *
-   * @example
-   * ```ts
-   * await eventStore.deleteSnapshot("foo:reducer", `foo:${foo}:bars`);
-   * ```
-   */
-  async deleteSnapshot(name: string, streamOrRelation: string): Promise<void> {
-    await this.snapshots.remove(name, streamOrRelation);
-  }
+    /**
+     * Delete a snapshot.
+     *
+     * @param streamOrRelation - Stream, or Relation to delete snapshot for.
+     * @param reducer          - Reducer to remove snapshot for.
+     *
+     * @example
+     * ```ts
+     * await eventStore.deleteSnapshot("foo:reducer", stream);
+     * await eventStore.deleteSnapshot("foo:reducer", `foo:${foo}:bars`);
+     * ```
+     */
+    delete: async (name: string, streamOrRelation: string): Promise<void> => {
+      await this.snapshots.remove(name, streamOrRelation);
+    },
+  };
 }
 
 /*

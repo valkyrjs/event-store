@@ -81,7 +81,7 @@ export default describe<Events>(".reduce", (getEventStore) => {
       }),
     );
 
-    await store.createSnapshot({ name: "user", stream, reducer: userReducer });
+    await store.snapshot.create({ name: "user", stream, reducer: userReducer });
 
     const state = await store.reduce({ name: "user", stream, reducer: userReducer });
 

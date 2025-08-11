@@ -49,7 +49,7 @@ export default describe<Events>(".createSnapshot", (getEventStore) => {
       }),
     );
 
-    await store.createSnapshot({ name: "user", stream, reducer: userReducer });
+    await store.snapshot.create({ name: "user", stream, reducer: userReducer });
 
     const snapshot = await store.snapshots.getByStream("user", stream);
 
