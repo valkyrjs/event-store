@@ -2,10 +2,10 @@ import { assertEquals } from "@std/assert";
 import { it } from "@std/testing/bdd";
 import { nanoid } from "nanoid";
 
-import type { EventStoreFactory } from "../../mocks/events.ts";
+import type { Events } from "../../mocks/events.ts";
 import { describe } from "../../utilities/describe.ts";
 
-export default describe<EventStoreFactory>("relations", (getEventStore) => {
+export default describe<Events>("relations", (getEventStore) => {
   it("should create a new relation", async () => {
     const { store } = await getEventStore();
 

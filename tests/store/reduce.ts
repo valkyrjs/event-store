@@ -2,11 +2,11 @@ import { assertEquals } from "@std/assert";
 import { it } from "@std/testing/bdd";
 import { nanoid } from "nanoid";
 
-import type { EventStoreFactory } from "../mocks/events.ts";
+import type { Events } from "../mocks/events.ts";
 import { userReducer } from "../mocks/user-reducer.ts";
 import { describe } from "../utilities/describe.ts";
 
-export default describe<EventStoreFactory>(".reduce", (getEventStore) => {
+export default describe<Events>(".reduce", (getEventStore) => {
   it("should return reduced state", async () => {
     const { store } = await getEventStore();
     const stream = nanoid();

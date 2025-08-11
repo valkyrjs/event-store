@@ -1,7 +1,7 @@
 import { makeReducer } from "../../libraries/reducer.ts";
-import { EventStoreFactory } from "./events.ts";
+import { Events } from "./events.ts";
 
-export const userReducer = makeReducer<EventStoreFactory, UserState>(
+export const userReducer = makeReducer<Events, UserState>(
   (state, event) => {
     switch (event.type) {
       case "user:created": {

@@ -6,8 +6,7 @@ import { PostgresAdapter } from "../adapters/postgres/adapter.ts";
 import type { PostgresConnection } from "../adapters/postgres/connection.ts";
 import { EventStore, type EventStoreHooks } from "../libraries/event-store.ts";
 import { Projector } from "../libraries/projector.ts";
-import { aggregates } from "./mocks/aggregates.ts";
-import { events, EventStoreFactory } from "./mocks/events.ts";
+import { Events, events } from "./mocks/events.ts";
 import testAddEvent from "./store/add-event.ts";
 import testAddManyEvents from "./store/add-many-events.ts";
 import testCreateSnapshot from "./store/create-snapshot.ts";
@@ -26,8 +25,7 @@ const DB_NAME = "sandbox";
 const container = await PostgresTestContainer.start("postgres:17");
 const sql = postgres(container.url(DB_NAME));
 
-const eventStoreFn = async (options: { hooks?: EventStoreHooks<EventStoreFactory> } = {}) =>
-  getEventStore(sql, options);
+const eventStoreFn = async (options: { hooks?: EventStoreHooks<Events> } = {}) => getEventStore(sql, options);
 
 /*
  |--------------------------------------------------------------------------------
@@ -103,7 +101,6 @@ describe("Adapter > Postgres", () => {
   testReplayEvents(eventStoreFn);
   testReduce(eventStoreFn);
   testOnceProjection(eventStoreFn);
-
   testPushAggregate(eventStoreFn);
   testPushManyAggregates(eventStoreFn);
 });
@@ -114,18 +111,14 @@ describe("Adapter > Postgres", () => {
  |--------------------------------------------------------------------------------
  */
 
-async function getEventStore(
-  connection: PostgresConnection,
-  { hooks = {} }: { hooks?: EventStoreHooks<EventStoreFactory> },
-) {
+async function getEventStore(connection: PostgresConnection, { hooks = {} }: { hooks?: EventStoreHooks<Events> }) {
   const store = new EventStore({
     adapter: new PostgresAdapter(connection, { schema: "event_store" }),
     events,
-    aggregates,
     hooks,
   });
 
-  const projector = new Projector<EventStoreFactory>();
+  const projector = new Projector<Events>();
 
   if (hooks.onEventsInserted === undefined) {
     store.onEventsInserted(async (records, { batch }) => {

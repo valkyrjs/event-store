@@ -4,8 +4,7 @@ import { MongoTestContainer } from "@valkyr/testcontainers/mongodb";
 import { MongoAdapter, register } from "../adapters/mongo/adapter.ts";
 import { EventStore, type EventStoreHooks } from "../libraries/event-store.ts";
 import { Projector } from "../libraries/projector.ts";
-import { aggregates } from "./mocks/aggregates.ts";
-import { events, type EventStoreFactory } from "./mocks/events.ts";
+import { type Events, events } from "./mocks/events.ts";
 import testAddEvent from "./store/add-event.ts";
 import testAddManyEvents from "./store/add-many-events.ts";
 import testCreateSnapshot from "./store/create-snapshot.ts";
@@ -23,7 +22,7 @@ const DB_NAME = "sandbox";
 
 const container = await MongoTestContainer.start();
 
-const eventStoreFn = async (options: { hooks?: EventStoreHooks<EventStoreFactory> } = {}) => getEventStore(options);
+const eventStoreFn = async (options: { hooks?: EventStoreHooks<Events> } = {}) => getEventStore(options);
 
 /*
  |--------------------------------------------------------------------------------
@@ -66,7 +65,6 @@ describe("Adapter > MongoDb", () => {
   testReplayEvents(eventStoreFn);
   testReduce(eventStoreFn);
   testOnceProjection(eventStoreFn);
-
   testPushAggregate(eventStoreFn);
   testPushManyAggregates(eventStoreFn);
 });
@@ -77,15 +75,14 @@ describe("Adapter > MongoDb", () => {
  |--------------------------------------------------------------------------------
  */
 
-async function getEventStore({ hooks = {} }: { hooks?: EventStoreHooks<EventStoreFactory> }) {
+async function getEventStore({ hooks = {} }: { hooks?: EventStoreHooks<Events> }) {
   const store = new EventStore({
     adapter: new MongoAdapter(() => container.client, DB_NAME),
     events,
-    aggregates,
     hooks,
   });
 
-  const projector = new Projector<EventStoreFactory>();
+  const projector = new Projector<Events>();
 
   if (hooks.onEventsInserted === undefined) {
     store.onEventsInserted(async (records, { batch }) => {

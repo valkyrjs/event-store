@@ -1,6 +1,7 @@
 import type { AggregateRoot } from "../libraries/aggregate.ts";
 import type { Unknown } from "../types/common.ts";
 import { EventFactory } from "./event-factory.ts";
+import type { AnyEventStore } from "./event-store.ts";
 
 /**
  * Make an event reducer that produces a aggregate instance from resolved
@@ -11,13 +12,13 @@ import { EventFactory } from "./event-factory.ts";
 export function makeAggregateReducer<
   TEventFactory extends EventFactory,
   TAggregateRoot extends typeof AggregateRoot<TEventFactory>,
->(aggregate: TAggregateRoot): Reducer<TEventFactory, InstanceType<TAggregateRoot>> {
+>(store: AnyEventStore, aggregate: TAggregateRoot): Reducer<TEventFactory, InstanceType<TAggregateRoot>> {
   return {
     from(snapshot: Unknown) {
-      return aggregate.from(snapshot);
+      return aggregate.from(store, snapshot);
     },
     reduce(events: TEventFactory["$events"][number]["$record"][], snapshot?: Unknown) {
-      const instance = aggregate.from(snapshot);
+      const instance = aggregate.from(store, snapshot);
       for (const event of events) {
         instance.with(event);
       }

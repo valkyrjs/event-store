@@ -1,13 +1,9 @@
 import { AggregateRoot } from "../../libraries/aggregate.ts";
-import { AggregateFactory } from "../../libraries/aggregate-factory.ts";
-import { makeId } from "../../libraries/nanoid.ts";
-import { makeAggregateReducer } from "../../libraries/reducer.ts";
-import { EventStoreFactory } from "./events.ts";
+import { Events } from "./events.ts";
 
-export class User extends AggregateRoot<EventStoreFactory> {
+export class User extends AggregateRoot<Events> {
   static override readonly name = "user";
 
-  id: string = "";
   name: Name = {
     given: "",
     family: "",
@@ -20,39 +16,11 @@ export class User extends AggregateRoot<EventStoreFactory> {
   };
 
   // -------------------------------------------------------------------------
-  // Factories
-  // -------------------------------------------------------------------------
-
-  static reducer = makeAggregateReducer(User);
-
-  static create(name: Name, email: string): User {
-    const user = new User();
-    user.push({
-      type: "user:created",
-      stream: makeId(),
-      data: { name, email },
-      meta: { auditor: "foo" },
-    });
-    return user;
-  }
-
-  static async getById(userId: string): Promise<User | undefined> {
-    return this.$store.reduce({ name: "user", stream: userId, reducer: this.reducer });
-  }
-
-  // -------------------------------------------------------------------------
   // Reducer
   // -------------------------------------------------------------------------
 
-  with(event: EventStoreFactory["$events"][number]["$record"]) {
+  with(event: Events["$events"][number]["$record"]) {
     switch (event.type) {
-      case "user:created": {
-        this.id = event.stream;
-        this.name.given = event.data.name?.given ?? "";
-        this.name.family = event.data.name?.family ?? "";
-        this.email = event.data.email;
-        break;
-      }
       case "user:name:given-set": {
         this.name.given = event.data;
         break;
@@ -107,11 +75,6 @@ export class User extends AggregateRoot<EventStoreFactory> {
     });
   }
 
-  async snapshot(): Promise<this> {
-    await this.$store.createSnapshot({ name: "user", stream: this.id, reducer: User.reducer });
-    return this;
-  }
-
   // -------------------------------------------------------------------------
   // Helpers
   // -------------------------------------------------------------------------
@@ -120,8 +83,6 @@ export class User extends AggregateRoot<EventStoreFactory> {
     return `${this.name.given} ${this.name.family}`;
   }
 }
-
-export const aggregates = new AggregateFactory([User]);
 
 type Name = {
   given: string;

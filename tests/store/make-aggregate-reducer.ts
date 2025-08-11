@@ -1,24 +1,26 @@
 import { assertEquals } from "@std/assert";
 import { it } from "@std/testing/bdd";
 
-import type { EventStoreFactory } from "../mocks/events.ts";
+import { User } from "../mocks/aggregates.ts";
+import type { Events } from "../mocks/events.ts";
 import { describe } from "../utilities/describe.ts";
 
-export default describe<EventStoreFactory>(".makeAggregateReducer", (getEventStore) => {
+export default describe<Events>(".makeAggregateReducer", (getEventStore) => {
   it("should reduce a user", async () => {
     const { store } = await getEventStore();
 
-    const userA = await store
-      .aggregate("user")
-      .create({ given: "John", family: "Doe" }, "john.doe@fixture.none")
+    const userA = await store.aggregate
+      .from(User)
       .setGivenName("Jane")
+      .setFamilyName("Doe")
+      .setEmail("john.doe@fixture.none", "auditor")
       .save();
 
     await userA.snapshot();
 
     await userA.setFamilyName("Smith").setEmail("jane.smith@fixture.none", "system").save();
 
-    const userB = await store.aggregate("user").getById(userA.id);
+    const userB = await store.aggregate.getByStream(User, userA.id);
     if (userB === undefined) {
       throw new Error("Expected user to exist");
     }

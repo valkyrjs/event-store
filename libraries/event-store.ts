@@ -35,8 +35,7 @@
 import { EventStoreAdapter } from "../types/adapter.ts";
 import type { Unknown } from "../types/common.ts";
 import type { EventReadOptions, ReduceQuery } from "../types/query.ts";
-import type { AggregateRoot } from "./aggregate.ts";
-import { AggregateFactory } from "./aggregate-factory.ts";
+import { AggregateRootClass } from "./aggregate.ts";
 import { EventInsertionError, EventMissingError, EventValidationError } from "./errors.ts";
 import { EventStatus } from "./event.ts";
 import { EventFactory } from "./event-factory.ts";
@@ -53,24 +52,21 @@ import { makeAggregateReducer, makeReducer } from "./reducer.ts";
  * Provides a common interface to interact with a event storage solution. Its built
  * on an adapter pattern to allow for multiple different storage drivers.
  */
-export class EventStore<
-  TEventFactory extends EventFactory,
-  TAggregateFactory extends AggregateFactory<TEventFactory>,
-  TEventStoreAdapter extends EventStoreAdapter<any>,
-> {
+export class EventStore<TEventFactory extends EventFactory, TEventStoreAdapter extends EventStoreAdapter<any>> {
+  readonly uuid: string;
+
   readonly #adapter: TEventStoreAdapter;
   readonly #events: TEventFactory;
-  readonly #aggregates: TAggregateFactory;
   readonly #snapshot: "manual" | "auto";
   readonly #hooks: EventStoreHooks<TEventFactory>;
 
   declare readonly $events: TEventFactory["$events"];
   declare readonly $records: TEventFactory["$events"][number]["$record"][];
 
-  constructor(config: EventStoreConfig<TEventFactory, TAggregateFactory, TEventStoreAdapter>) {
+  constructor(config: EventStoreConfig<TEventFactory, TEventStoreAdapter>) {
+    this.uuid = crypto.randomUUID();
     this.#adapter = config.adapter;
     this.#events = config.events;
-    this.#aggregates = config.aggregates.withStore(this);
     this.#snapshot = config.snapshot ?? "manual";
     this.#hooks = config.hooks ?? {};
   }
@@ -113,55 +109,82 @@ export class EventStore<
    |--------------------------------------------------------------------------------
    */
 
-  /**
-   * Get aggregate uninstantiated class.
-   *
-   * @param name - Aggregate name to retrieve.
-   */
-  aggregate<TName extends TAggregateFactory["$aggregates"][number]["name"]>(
-    name: TName,
-  ): Extract<TAggregateFactory["$aggregates"][number], { name: TName }> {
-    return this.#aggregates.get(name) as Extract<TAggregateFactory["$aggregates"][number], { name: TName }>;
-  }
+  readonly aggregate = {
+    /**
+     * Takes a list of aggregates and commits any pending events to the event store.
+     * Events are committed in order so its important to ensure that the aggregates
+     * are placed in the correct index position of the array.
+     *
+     * This method allows for a simpler way to commit many events over many
+     * aggregates in a single transaction. Ensuring atomicity of a larger group
+     * of events.
+     *
+     * @param aggregates - Aggregates to push events from.
+     * @param settings   - Event settings which can modify insertion behavior.
+     */
+    push: async (
+      aggregates: InstanceType<AggregateRootClass<TEventFactory>>[],
+      settings?: EventsInsertSettings,
+    ): Promise<void> => {
+      const events: this["$events"][number]["$record"][] = [];
+      for (const aggregate of aggregates) {
+        events.push(...aggregate.toPending());
+      }
+      await this.pushManyEvents(events, settings);
+      for (const aggregate of aggregates) {
+        aggregate.flush();
+      }
+    },
 
-  /**
-   * Takes in an aggregate and commits any pending events to the event store.
-   *
-   * @param aggregate - Aggregate to push events from.
-   * @param settings  - Event settings which can modify insertion behavior.
-   */
-  async pushAggregate(
-    aggregate: InstanceType<TAggregateFactory["$aggregates"][number]>,
-    settings?: EventsInsertSettings,
-  ): Promise<void> {
-    await aggregate.save(settings);
-  }
+    /**
+     * Get a new aggregate instance by a given stream.
+     *
+     * @param name   - Aggregate to instantiate.
+     * @param stream - Stream to retrieve snapshot from.
+     */
+    getByStream: async <TAggregate extends AggregateRootClass<TEventFactory>>(
+      aggregate: TAggregate,
+      stream: string,
+    ): Promise<InstanceType<TAggregate> | undefined> => {
+      const reducer = makeAggregateReducer(this, aggregate);
+      const snapshot = await this.reduce({ name: aggregate.name, stream, reducer });
+      if (snapshot === undefined) {
+        return undefined;
+      }
+      return aggregate.from(this, snapshot as Unknown);
+    },
 
-  /**
-   * Takes a list of aggregates and commits any pending events to the event store.
-   * Events are committed in order so its important to ensure that the aggregates
-   * are placed in the correct index position of the array.
-   *
-   * This method allows for a simpler way to commit many events over many
-   * aggregates in a single transaction. Ensuring atomicity of a larger group
-   * of events.
-   *
-   * @param aggregates - Aggregates to push events from.
-   * @param settings   - Event settings which can modify insertion behavior.
-   */
-  async pushManyAggregates(
-    aggregates: InstanceType<TAggregateFactory["$aggregates"][number]>[],
-    settings?: EventsInsertSettings,
-  ): Promise<void> {
-    const events: this["$events"][number]["$record"][] = [];
-    for (const aggregate of aggregates) {
-      events.push(...aggregate.toPending());
-    }
-    await this.pushManyEvents(events, settings);
-    for (const aggregate of aggregates) {
-      aggregate.flush();
-    }
-  }
+    /**
+     * Get a new aggregate instance by a given relation.
+     *
+     * @param name     - Aggregate to instantiate.
+     * @param relation - Relation to retrieve snapshot from.
+     */
+    getByRelation: async <TAggregate extends AggregateRootClass<TEventFactory>>(
+      aggregate: TAggregate,
+      relation: string,
+    ): Promise<InstanceType<TAggregate> | undefined> => {
+      const reducer = makeAggregateReducer(this, aggregate);
+      const snapshot = await this.reduce({ name: aggregate.name, relation, reducer });
+      if (snapshot === undefined) {
+        return undefined;
+      }
+      return aggregate.from(this, snapshot as Unknown);
+    },
+
+    /**
+     * Instantiate a new aggreate.
+     *
+     * @param aggregate - Aggregate to instantiate.
+     * @param snapshot  - Optional snapshot to instantiate aggregate with.
+     */
+    from: <TAggregate extends AggregateRootClass<TEventFactory>>(
+      aggregate: TAggregate,
+      snapshot?: Unknown,
+    ): InstanceType<TAggregate> => {
+      return aggregate.from(this, snapshot);
+    },
+  };
 
   /*
    |--------------------------------------------------------------------------------
@@ -342,43 +365,6 @@ export class EventStore<
   }
 
   /**
-   * Make a new event reducer based on the events registered with the event store.
-   *
-   * @param aggregate - Aggregate class to create instance from.
-   *
-   * @example
-   * ```ts
-   * class Foo extends AggregateRoot<Event> {
-   *   name: string = "";
-   *
-   *   static #reducer = makeAggregateReducer(Foo);
-   *
-   *   static async getById(fooId: string): Promise<Foo | undefined> {
-   *     return eventStore.reduce({
-   *       name: "foo",
-   *       stream: "stream-id",
-   *       reducer: this.#reducer,
-   *     });
-   *   }
-   *
-   *   with(event) {
-   *     switch (event.type) {
-   *       case "FooCreated": {
-   *         this.name = event.data.name;
-   *         break;
-   *       }
-   *     }
-   *   }
-   * });
-   * ```
-   */
-  makeAggregateReducer<TAggregateRoot extends typeof AggregateRoot<TEventFactory>>(
-    aggregate: TAggregateRoot,
-  ): Reducer<TEventFactory, InstanceType<TAggregateRoot>> {
-    return makeAggregateReducer<TEventFactory, TAggregateRoot>(aggregate);
-  }
-
-  /**
    * Reduce events in the given stream to a entity state.
    *
    * @param query   - Reducer query to resolve event state from.
@@ -540,14 +526,9 @@ export class EventStore<
  |--------------------------------------------------------------------------------
  */
 
-type EventStoreConfig<
-  TEventFactory extends EventFactory,
-  TAggregateFactory extends AggregateFactory<TEventFactory>,
-  TEventStoreAdapter extends EventStoreAdapter<any>,
-> = {
+type EventStoreConfig<TEventFactory extends EventFactory, TEventStoreAdapter extends EventStoreAdapter<any>> = {
   adapter: TEventStoreAdapter;
   events: TEventFactory;
-  aggregates: TAggregateFactory;
   snapshot?: "manual" | "auto";
   hooks?: EventStoreHooks<TEventFactory>;
 };
@@ -588,4 +569,4 @@ export type EventStoreHooks<TEventFactory extends EventFactory> = Partial<{
   onError(error: unknown): Promise<void>;
 }>;
 
-export type AnyEventStore = EventStore<any, any, any>;
+export type AnyEventStore = EventStore<any, any>;

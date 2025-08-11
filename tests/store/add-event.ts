@@ -3,10 +3,10 @@ import { it } from "@std/testing/bdd";
 
 import { EventInsertionError, EventValidationError } from "../../libraries/errors.ts";
 import { makeId } from "../../libraries/nanoid.ts";
-import type { EventStoreFactory } from "../mocks/events.ts";
+import type { Events } from "../mocks/events.ts";
 import { describe } from "../utilities/describe.ts";
 
-export default describe<EventStoreFactory>(".addEvent", (getEventStore) => {
+export default describe<Events>(".addEvent", (getEventStore) => {
   it("should throw a 'EventValidationError' when providing bad event data", async () => {
     const { store } = await getEventStore();
 

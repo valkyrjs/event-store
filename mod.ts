@@ -1,5 +1,4 @@
 export * from "./libraries/aggregate.ts";
-export * from "./libraries/aggregate-factory.ts";
 export * from "./libraries/errors.ts";
 export * from "./libraries/event.ts";
 export * from "./libraries/event-factory.ts";

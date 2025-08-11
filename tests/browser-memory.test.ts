@@ -5,8 +5,7 @@ import { describe } from "@std/testing/bdd";
 import { BrowserAdapter } from "../adapters/browser/adapter.ts";
 import { EventStore, EventStoreHooks } from "../libraries/event-store.ts";
 import { Projector } from "../libraries/projector.ts";
-import { aggregates } from "./mocks/aggregates.ts";
-import { events, EventStoreFactory } from "./mocks/events.ts";
+import { Events, events } from "./mocks/events.ts";
 import testAddEvent from "./store/add-event.ts";
 import testCreateSnapshot from "./store/create-snapshot.ts";
 import testMakeAggregateReducer from "./store/make-aggregate-reducer.ts";
@@ -17,7 +16,7 @@ import testPushManyAggregates from "./store/push-many-aggregates.ts";
 import testReduce from "./store/reduce.ts";
 import testReplayEvents from "./store/replay-events.ts";
 
-const eventStoreFn = async (options: { hooks?: EventStoreHooks<EventStoreFactory> } = {}) => getEventStore(options);
+const eventStoreFn = async (options: { hooks?: EventStoreHooks<Events> } = {}) => getEventStore(options);
 
 /*
  |--------------------------------------------------------------------------------
@@ -33,7 +32,6 @@ describe("Adapter > Browser (memory)", () => {
   testReplayEvents(eventStoreFn);
   testReduce(eventStoreFn);
   testOnceProjection(eventStoreFn);
-
   testPushAggregate(eventStoreFn);
   testPushManyAggregates(eventStoreFn);
 });
@@ -44,15 +42,14 @@ describe("Adapter > Browser (memory)", () => {
  |--------------------------------------------------------------------------------
  */
 
-function getEventStore({ hooks = {} }: { hooks?: EventStoreHooks<EventStoreFactory> }) {
+function getEventStore({ hooks = {} }: { hooks?: EventStoreHooks<Events> }) {
   const store = new EventStore({
     adapter: new BrowserAdapter("memorydb"),
     events,
-    aggregates,
     hooks,
   });
 
-  const projector = new Projector<EventStoreFactory>();
+  const projector = new Projector<Events>();
 
   if (hooks.onEventsInserted === undefined) {
     store.onEventsInserted(async (records, { batch }) => {

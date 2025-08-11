@@ -1,5 +1,5 @@
 import type { Db, WithId } from "mongodb";
-import type { z, ZodObject } from "zod/v4";
+import type { z, ZodObject } from "zod";
 
 /**
  * Take a list of records and run it through the given zod parser. This

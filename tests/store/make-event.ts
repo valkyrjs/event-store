@@ -2,10 +2,10 @@ import { assertEquals, assertLess } from "@std/assert";
 import { it } from "@std/testing/bdd";
 
 import { RelationPayload } from "../../types/adapter.ts";
-import type { EventStoreFactory } from "../mocks/events.ts";
+import type { Events } from "../mocks/events.ts";
 import { describe } from "../utilities/describe.ts";
 
-export default describe<EventStoreFactory>(".makeEvent", (getEventStore) => {
+export default describe<Events>(".makeEvent", (getEventStore) => {
   it("should make and performantly batch insert a list of events directly", async () => {
     const { store } = await getEventStore();
 

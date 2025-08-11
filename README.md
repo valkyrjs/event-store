@@ -11,66 +11,6 @@ repository to one or more distibuted services.
 
 The following provides a quick introduction on how to get started.
 
-### Configs
-
-Events are defined in `json` configuration files which we print to a generated `events.ts` file that is used by the
-event store instance we are using. To do this, start by creating a new folder that will house our event configurations.
-
-```sh
-$ mkdir events
-$ cd events
-```
-
-Now add a new event configuration file.
-
-```sh
-$ touch user-created.json
-```
-
-Open the file and add the event details.
-
-```json
-{
-  "event": {
-    "type": "user:created",
-    "data": {
-      "name": {
-        "type": "object",
-        "properties": {
-          "given": {
-            "type": "string"
-          },
-          "family": {
-            "type": "string"
-          }
-        }
-      },
-      "email": {
-        "type": "string"
-      }
-    },
-    "meta": {
-      "auditor": {
-        "type": "string"
-      }
-    }
-  }
-}
-```
-
-### Generate
-
-To create our `events.ts` file we have to run our configurations through our event printer.
-
-```ts
-import { printEvents } from "@valkyr/event-store";
-
-await printEvents({
-  inputs: ["./configs/events"],
-  outputs: ["./generated/events.ts"],
-});
-```
-
 ### Event Store
 
 Once we have defined our configs and printed our events we create a new event store instance. Currently we have support

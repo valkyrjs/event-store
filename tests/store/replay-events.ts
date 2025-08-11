@@ -2,10 +2,10 @@ import { assertObjectMatch } from "@std/assert";
 import { it } from "@std/testing/bdd";
 import { nanoid } from "nanoid";
 
-import { EventStoreFactory } from "../mocks/events.ts";
+import type { Events } from "../mocks/events.ts";
 import { describe } from "../utilities/describe.ts";
 
-export default describe<EventStoreFactory>(".replayEvents", (getEventStore) => {
+export default describe<Events>(".replayEvents", (getEventStore) => {
   it("should replay events", async () => {
     const { store, projector } = await getEventStore();
     const stream = nanoid();

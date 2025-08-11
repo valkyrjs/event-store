@@ -1,7 +1,7 @@
 import { makeReducer } from "../../libraries/reducer.ts";
-import { EventStoreFactory } from "./events.ts";
+import { Events } from "./events.ts";
 
-export const userPostReducer = makeReducer<EventStoreFactory, UserPostState>(
+export const userPostReducer = makeReducer<Events, UserPostState>(
   (state, event) => {
     switch (event.type) {
       case "post:created": {

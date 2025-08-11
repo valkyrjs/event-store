@@ -1,4 +1,4 @@
-import z, { ZodType } from "zod/v4";
+import z, { ZodType } from "zod";
 
 import { EventValidationError } from "./errors.ts";
 import { makeId } from "./nanoid.ts";

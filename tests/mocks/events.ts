@@ -1,4 +1,4 @@
-import z from "zod/v4";
+import z from "zod";
 
 import { event } from "../../libraries/event.ts";
 import { EventFactory } from "../../libraries/event-factory.ts";
@@ -32,4 +32,4 @@ export const events = new EventFactory([
   event.type("post:removed").meta(auditor),
 ]);
 
-export type EventStoreFactory = typeof events;
+export type Events = typeof events;

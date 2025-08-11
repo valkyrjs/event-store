@@ -1,6 +1,8 @@
 import type { AnyEventStore, EventsInsertSettings } from "../libraries/event-store.ts";
 import type { Unknown } from "../types/common.ts";
+import { AggregateSnapshotViolation, AggregateStreamViolation } from "./errors.ts";
 import { EventFactory } from "./event-factory.ts";
+import { makeAggregateReducer } from "./reducer.ts";
 
 /**
  * Represents an aggregate root in an event-sourced system.
@@ -18,39 +20,43 @@ export abstract class AggregateRoot<TEventFactory extends EventFactory> {
    */
   static readonly name: string;
 
+  readonly #store: AnyEventStore;
+
   /**
-   * Event store to transact against.
+   * Primary unique identifier for the stream the aggregate belongs to.
    */
-  protected static _store?: AnyEventStore;
+  #stream?: string;
 
   /**
    * List of pending records to push to the parent event store.
    */
   #pending: TEventFactory["$events"][number]["$record"][] = [];
 
+  /**
+   * Instantiate a new AggregateRoot with a given event store instance.
+   *
+   * @param store - Store this aggregate instance acts against.
+   */
+  constructor(store: AnyEventStore) {
+    this.#store = store;
+  }
+
   // -------------------------------------------------------------------------
   // Accessors
   // -------------------------------------------------------------------------
 
-  static get $store(): AnyEventStore {
-    if (this._store === undefined) {
-      throw new Error(`Aggregate Root > Failed to retrieve store for '${this.name}', no store has been attached.`);
+  set id(value: string) {
+    if (this.#stream !== undefined) {
+      throw new AggregateStreamViolation(this.constructor.name);
     }
-    return this._store;
+    this.#stream = value;
   }
 
-  static set $store(store: AnyEventStore) {
-    // if (this._store !== undefined) {
-    //   throw new Error(`Aggregate '${this.constructor.name}' already has store assigned`);
-    // }
-    this._store = store;
-  }
-
-  /**
-   * Get store instance attached to the static aggregate.
-   */
-  get $store(): AnyEventStore {
-    return (this.constructor as any).$store;
+  get id() {
+    if (this.#stream === undefined) {
+      this.#stream = crypto.randomUUID();
+    }
+    return this.#stream;
   }
 
   /**
@@ -74,9 +80,10 @@ export abstract class AggregateRoot<TEventFactory extends EventFactory> {
    */
   static from<TEventFactory extends EventFactory, TAggregateRoot extends typeof AggregateRoot<TEventFactory>>(
     this: TAggregateRoot,
+    store: AnyEventStore,
     snapshot?: Unknown,
   ): InstanceType<TAggregateRoot> {
-    const instance = new (this as any)();
+    const instance = new (this as any)(store);
     if (snapshot !== undefined) {
       Object.assign(instance, snapshot);
     }
@@ -109,7 +116,7 @@ export abstract class AggregateRoot<TEventFactory extends EventFactory> {
   push<TType extends TEventFactory["$events"][number]["state"]["type"]>(
     record: { type: TType } & Extract<TEventFactory["$events"][number], { state: { type: TType } }>["$payload"],
   ): this {
-    const pending = this.$store.event(record);
+    const pending = this.#store.event(record);
     this.#pending.push(pending);
     this.with(pending);
     return this;
@@ -136,11 +143,23 @@ export abstract class AggregateRoot<TEventFactory extends EventFactory> {
     if (this.isDirty === false) {
       return this;
     }
-    await this.$store.pushManyEvents(this.#pending, settings);
+    await this.#store.pushManyEvents(this.#pending, settings);
     if (flush === true) {
       this.flush();
     }
     return this;
+  }
+
+  async snapshot() {
+    const stream = this.#stream;
+    if (stream === undefined) {
+      throw new AggregateSnapshotViolation((this.constructor as typeof AggregateRoot<TEventFactory>).name);
+    }
+    await this.#store.createSnapshot({
+      name: this.constructor.name,
+      stream,
+      reducer: makeAggregateReducer(this.#store, this.constructor as typeof AggregateRoot<TEventFactory>),
+    });
   }
 
   /**

@@ -2,10 +2,10 @@ import { assertEquals, assertObjectMatch } from "@std/assert";
 import { it } from "@std/testing/bdd";
 
 import { makeId } from "../../libraries/nanoid.ts";
-import type { EventStoreFactory } from "../mocks/events.ts";
+import type { Events } from "../mocks/events.ts";
 import { describe } from "../utilities/describe.ts";
 
-export default describe<EventStoreFactory>("projector.once", (getEventStore) => {
+export default describe<Events>("projector.once", (getEventStore) => {
   it("should handle successfull projection", async () => {
     const { store, projector } = await getEventStore();
 

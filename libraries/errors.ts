@@ -1,3 +1,42 @@
+/*
+ |--------------------------------------------------------------------------------
+ | Aggregate Errors
+ |--------------------------------------------------------------------------------
+ */
+
+/**
+ * Error thrown when stream assignment on the aggregate has already been set.
+ *
+ * @property name - Name of the aggregate throwing the error.
+ */
+export class AggregateStreamViolation extends Error {
+  readonly type = "AggregateStreamAlreadySet";
+
+  constructor(name: string) {
+    super(`EventStore Error: Aggregate '${name}' already has a stream assigned, overriding not supported.`);
+  }
+}
+
+/**
+ * Error thrown when attempting to snapshot an aggregate without a resolved
+ * stream.
+ *
+ * @property name - Name of the aggregate throwing the error.
+ */
+export class AggregateSnapshotViolation extends Error {
+  readonly type = "AggregateSnapshotViolation";
+
+  constructor(name: string) {
+    super(`EventStore Error: Aggregate '${name}' has no stream assigned, snapshot generation cannot be executed.`);
+  }
+}
+
+/*
+ |--------------------------------------------------------------------------------
+ | Event Errors
+ |--------------------------------------------------------------------------------
+ */
+
 /**
  * Error thrown when an expected event is missing from the event store.
  *
@@ -13,12 +52,6 @@ export class EventMissingError extends Error {
     super(`EventStore Error: Event '${type}' has not been registered with the event store instance.`);
   }
 }
-
-/*
- |--------------------------------------------------------------------------------
- | Event Errors
- |--------------------------------------------------------------------------------
- */
 
 /**
  * Error thrown when an event fails validation checks.

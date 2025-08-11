@@ -3,12 +3,12 @@ import { it } from "@std/testing/bdd";
 import { nanoid } from "nanoid";
 
 import { makeId } from "../../libraries/nanoid.ts";
-import type { EventStoreFactory } from "../mocks/events.ts";
+import type { Events } from "../mocks/events.ts";
 import { userPostReducer } from "../mocks/user-posts-reducer.ts";
 import { userReducer } from "../mocks/user-reducer.ts";
 import { describe } from "../utilities/describe.ts";
 
-export default describe<EventStoreFactory>(".makeReducer", (getEventStore) => {
+export default describe<Events>(".makeReducer", (getEventStore) => {
   it("should create a 'user' reducer and only reduce filtered events", async () => {
     const { store } = await getEventStore();
 

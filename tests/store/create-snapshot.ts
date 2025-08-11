@@ -2,11 +2,11 @@ import { assertEquals, assertNotEquals, assertObjectMatch } from "@std/assert";
 import { it } from "@std/testing/bdd";
 import { nanoid } from "nanoid";
 
-import type { EventStoreFactory } from "../mocks/events.ts";
+import type { Events } from "../mocks/events.ts";
 import { userReducer } from "../mocks/user-reducer.ts";
 import { describe } from "../utilities/describe.ts";
 
-export default describe<EventStoreFactory>(".createSnapshot", (getEventStore) => {
+export default describe<Events>(".createSnapshot", (getEventStore) => {
   it("should create a new snapshot", async () => {
     const { store } = await getEventStore();
     const stream = nanoid();
