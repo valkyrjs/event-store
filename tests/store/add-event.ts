@@ -2,7 +2,6 @@ import { assertEquals, assertObjectMatch, assertRejects } from "@std/assert";
 import { it } from "@std/testing/bdd";
 
 import { EventInsertionError, EventValidationError } from "../../libraries/errors.ts";
-import { makeId } from "../../libraries/nanoid.ts";
 import type { Events } from "../mocks/events.ts";
 import { describe } from "../utilities/describe.ts";
 
@@ -58,7 +57,7 @@ export default describe<Events>(".addEvent", (getEventStore) => {
   it("should insert and project 'user:created' event", async () => {
     const { store, projector } = await getEventStore();
 
-    const stream = makeId();
+    const stream = crypto.randomUUID();
     const event = store.event({
       stream,
       type: "user:created",
@@ -93,7 +92,7 @@ export default describe<Events>(".addEvent", (getEventStore) => {
       },
     });
 
-    const stream = makeId();
+    const stream = crypto.randomUUID();
     const event = store.event({
       stream,
       type: "user:created",
@@ -121,7 +120,7 @@ export default describe<Events>(".addEvent", (getEventStore) => {
   it("should insert 'user:created' and add it to 'tenant:xyz' relation", async () => {
     const { store, projector } = await getEventStore();
 
-    const key = `tenant:${makeId()}`;
+    const key = `tenant:${crypto.randomUUID()}`;
 
     projector.on("user:created", async ({ stream }) => {
       await store.relations.insert(key, stream);
@@ -171,7 +170,7 @@ export default describe<Events>(".addEvent", (getEventStore) => {
   it("should insert 'user:email-set' and remove it from 'tenant:xyz' relations", async () => {
     const { store, projector } = await getEventStore();
 
-    const key = `tenant:${makeId()}`;
+    const key = `tenant:${crypto.randomUUID()}`;
 
     projector.on("user:created", async ({ stream }) => {
       await store.relations.insert(key, stream);

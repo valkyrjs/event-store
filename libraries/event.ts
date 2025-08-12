@@ -1,7 +1,6 @@
 import z, { ZodType } from "zod";
 
 import { EventValidationError } from "./errors.ts";
-import { makeId } from "./nanoid.ts";
 import { getLogicalTimestamp } from "./time.ts";
 import { toPrettyErrorLines } from "./zod.ts";
 
@@ -41,8 +40,8 @@ export class Event<TEventState extends EventState = EventState> {
     const timestamp = getLogicalTimestamp();
 
     const record = {
-      id: makeId(),
-      stream: payload.stream ?? makeId(),
+      id: crypto.randomUUID(),
+      stream: payload.stream ?? crypto.randomUUID(),
       type: this.state.type,
       data: "data" in payload ? payload.data : null,
       meta: "meta" in payload ? payload.meta : null,
@@ -134,13 +133,13 @@ export type EventRecord<TEvent extends EventState = EventState> = {
   /**
    * A unique event identifier.
    */
-  id: string;
+  id: UUID;
 
   /**
    * Event streams are used to group related events together. This identifier
    * is used to identify the stream to which the event belongs.
    */
-  stream: string;
+  stream: UUID;
 
   /**
    * Type refers to the purpose of the event in a past tense descibing something
@@ -203,3 +202,5 @@ export type EventStatus = {
    */
   outdated: boolean;
 };
+
+export type UUID = `${string}-${string}-${string}-${string}-${string}`;

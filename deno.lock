@@ -10,7 +10,6 @@
     "npm:eslint@9": "9.33.0",
     "npm:fake-indexeddb@6": "6.1.0",
     "npm:mongodb@6": "6.18.0",
-    "npm:nanoid@5": "5.1.5",
     "npm:postgres@3": "3.4.7",
     "npm:prettier@3": "3.6.2",
     "npm:typescript-eslint@8": "8.39.0_eslint@9.33.0_typescript@5.9.2_@typescript-eslint+parser@8.39.0__eslint@9.33.0__typescript@5.9.2",
@@ -299,7 +298,7 @@
         "fast-equals",
         "idb",
         "mingo",
-        "nanoid@5.0.2",
+        "nanoid",
         "rfdc",
         "rxjs"
       ]
@@ -694,10 +693,6 @@
       "integrity": "sha512-2ustYUX1R2rL/Br5B/FMhi8d5/QzvkJ912rBYxskcpu0myTHzSZfTr1LAS2Sm7jxRUObRrSBFoyzwAhL49aVSg==",
       "bin": true
     },
-    "nanoid@5.1.5": {
-      "integrity": "sha512-Ir/+ZpE9fDsNH0hQ3C68uyThDXzYcim2EqcZ8zn8Chtt1iylPT9xXJB0kPCnqzgcEGikO9RxSrh63MsmVCU7Fw==",
-      "bin": true
-    },
     "natural-compare@1.4.0": {
       "integrity": "sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw=="
     },
@@ -894,7 +889,6 @@
         "npm:eslint@9",
         "npm:fake-indexeddb@6",
         "npm:mongodb@6",
-        "npm:nanoid@5",
         "npm:postgres@3",
         "npm:prettier@3",
         "npm:typescript-eslint@8",

@@ -1,6 +1,6 @@
 import type { AnyEventStore, EventsInsertSettings } from "../libraries/event-store.ts";
 import type { Unknown } from "../types/common.ts";
-import { AggregateSnapshotViolation, AggregateStreamViolation } from "./errors.ts";
+import { AggregateSnapshotViolation } from "./errors.ts";
 import { EventFactory } from "./event-factory.ts";
 
 /**
@@ -27,7 +27,7 @@ export abstract class AggregateRoot<TEventFactory extends EventFactory> {
   /**
    * Primary unique identifier for the stream the aggregate belongs to.
    */
-  #stream?: string;
+  id: string;
 
   /**
    * List of pending records to push to the parent event store.
@@ -40,26 +40,13 @@ export abstract class AggregateRoot<TEventFactory extends EventFactory> {
    * @param store - Store this aggregate instance acts against.
    */
   constructor(store: AnyEventStore) {
+    this.id = crypto.randomUUID();
     this.#store = store;
   }
 
   // -------------------------------------------------------------------------
   // Accessors
   // -------------------------------------------------------------------------
-
-  set id(value: string) {
-    if (this.#stream !== undefined) {
-      throw new AggregateStreamViolation(this.constructor.name);
-    }
-    this.#stream = value;
-  }
-
-  get id(): string {
-    if (this.#stream === undefined) {
-      this.#stream = crypto.randomUUID();
-    }
-    return this.#stream;
-  }
 
   get #self(): typeof AggregateRoot<TEventFactory> {
     return this.constructor as typeof AggregateRoot<TEventFactory>;
@@ -147,7 +134,7 @@ export abstract class AggregateRoot<TEventFactory extends EventFactory> {
    * any pending events, make sure to `.save()` before snapshotting.
    */
   async snapshot() {
-    const stream = this.#stream;
+    const stream = this.id;
     if (stream === undefined) {
       throw new AggregateSnapshotViolation(this.#self.name);
     }

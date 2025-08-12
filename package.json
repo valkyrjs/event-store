@@ -2,7 +2,6 @@
   "dependencies": {
     "@valkyr/db": "1.0.1",
     "mongodb": "6",
-    "nanoid": "5",
     "postgres": "3",
     "zod": "4"
   },

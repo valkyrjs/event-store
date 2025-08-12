@@ -1,6 +1,5 @@
 import { assertEquals } from "@std/assert";
 import { it } from "@std/testing/bdd";
-import { nanoid } from "nanoid";
 
 import type { Events } from "../../mocks/events.ts";
 import { describe } from "../../utilities/describe.ts";
@@ -10,7 +9,7 @@ export default describe<Events>("relations", (getEventStore) => {
     const { store } = await getEventStore();
 
     const key = "sample";
-    const stream = nanoid();
+    const stream = crypto.randomUUID();
 
     await store.relations.insert(key, stream);
 
@@ -21,7 +20,7 @@ export default describe<Events>("relations", (getEventStore) => {
     const { store } = await getEventStore();
 
     const key = "sample";
-    const stream = nanoid();
+    const stream = crypto.randomUUID();
 
     await store.relations.insertMany([
       { key, stream },

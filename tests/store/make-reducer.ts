@@ -1,8 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { it } from "@std/testing/bdd";
-import { nanoid } from "nanoid";
 
-import { makeId } from "../../libraries/nanoid.ts";
 import type { Events } from "../mocks/events.ts";
 import { userPostReducer } from "../mocks/user-posts-reducer.ts";
 import { userReducer } from "../mocks/user-reducer.ts";
@@ -12,8 +10,8 @@ export default describe<Events>(".makeReducer", (getEventStore) => {
   it("should create a 'user' reducer and only reduce filtered events", async () => {
     const { store } = await getEventStore();
 
-    const streamA = nanoid();
-    const streamB = nanoid();
+    const streamA = crypto.randomUUID();
+    const streamB = crypto.randomUUID();
 
     await store.pushEvent(
       store.event({
@@ -95,15 +93,15 @@ export default describe<Events>(".makeReducer", (getEventStore) => {
 
   it("should create a 'post:count' reducer and retrieve post correct post count", async () => {
     const { store, projector } = await getEventStore();
-    const auditor = nanoid();
+    const auditor = crypto.randomUUID();
 
     projector.on("post:created", async ({ stream, meta: { auditor } }) => {
       await store.relations.insert(`user:${auditor}:posts`, stream);
     });
 
-    const post1 = makeId();
-    const post2 = makeId();
-    const post3 = makeId();
+    const post1 = crypto.randomUUID();
+    const post2 = crypto.randomUUID();
+    const post3 = crypto.randomUUID();
 
     await store.pushEvent(
       store.event({

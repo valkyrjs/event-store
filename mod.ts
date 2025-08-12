@@ -3,7 +3,6 @@ export * from "./libraries/errors.ts";
 export * from "./libraries/event.ts";
 export * from "./libraries/event-factory.ts";
 export * from "./libraries/event-store.ts";
-export * from "./libraries/nanoid.ts";
 export * from "./libraries/projector.ts";
 export * from "./libraries/queue.ts";
 export * from "./libraries/reducer.ts";

@@ -19,6 +19,7 @@ export function makeAggregateReducer<
     },
     reduce(events: TEventFactory["$events"][number]["$record"][], snapshot?: Unknown) {
       const instance = aggregate.from(store, snapshot);
+      instance.id = events[0].stream;
       for (const event of events) {
         instance.with(event);
       }

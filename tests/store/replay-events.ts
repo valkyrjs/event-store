@@ -1,6 +1,5 @@
 import { assertObjectMatch } from "@std/assert";
 import { it } from "@std/testing/bdd";
-import { nanoid } from "nanoid";
 
 import type { Events } from "../mocks/events.ts";
 import { describe } from "../utilities/describe.ts";
@@ -8,7 +7,7 @@ import { describe } from "../utilities/describe.ts";
 export default describe<Events>(".replayEvents", (getEventStore) => {
   it("should replay events", async () => {
     const { store, projector } = await getEventStore();
-    const stream = nanoid();
+    const stream = crypto.randomUUID();
 
     const record: Record<string, any> = {};
 

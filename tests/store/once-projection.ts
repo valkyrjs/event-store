@@ -1,7 +1,6 @@
 import { assertEquals, assertObjectMatch } from "@std/assert";
 import { it } from "@std/testing/bdd";
 
-import { makeId } from "../../libraries/nanoid.ts";
 import type { Events } from "../mocks/events.ts";
 import { describe } from "../utilities/describe.ts";
 
@@ -9,7 +8,7 @@ export default describe<Events>("projector.once", (getEventStore) => {
   it("should handle successfull projection", async () => {
     const { store, projector } = await getEventStore();
 
-    const stream = makeId();
+    const stream = crypto.randomUUID();
     const event = store.event({
       stream,
       type: "user:created",
@@ -51,7 +50,7 @@ export default describe<Events>("projector.once", (getEventStore) => {
   it("should handle failed projection", async () => {
     const { store, projector } = await getEventStore();
 
-    const stream = makeId();
+    const stream = crypto.randomUUID();
     const event = store.event({
       stream,
       type: "user:created",

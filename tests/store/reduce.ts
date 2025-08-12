@@ -1,6 +1,5 @@
 import { assertEquals } from "@std/assert";
 import { it } from "@std/testing/bdd";
-import { nanoid } from "nanoid";
 
 import type { Events } from "../mocks/events.ts";
 import { userReducer } from "../mocks/user-reducer.ts";
@@ -9,7 +8,7 @@ import { describe } from "../utilities/describe.ts";
 export default describe<Events>(".reduce", (getEventStore) => {
   it("should return reduced state", async () => {
     const { store } = await getEventStore();
-    const stream = nanoid();
+    const stream = crypto.randomUUID();
 
     await store.pushEvent(
       store.event({
@@ -51,7 +50,7 @@ export default describe<Events>(".reduce", (getEventStore) => {
 
   it("should return snapshot if it exists and no new events were found", async () => {
     const { store } = await getEventStore();
-    const stream = nanoid();
+    const stream = crypto.randomUUID();
 
     await store.pushEvent(
       store.event({
@@ -94,7 +93,7 @@ export default describe<Events>(".reduce", (getEventStore) => {
   });
 
   it("should return undefined if stream does not have events", async () => {
-    const stream = nanoid();
+    const stream = crypto.randomUUID();
     const { store } = await getEventStore();
     const state = await store.reduce({ name: "user", stream, reducer: userReducer });
 
