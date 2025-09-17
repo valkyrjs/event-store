@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@valkyr/db": "1.0.1",
+    "@valkyr/db": "npm:@jsr/valkyr__db@2",
     "mongodb": "6",
     "postgres": "3",
     "zod": "4"
@@ -9,7 +9,6 @@
     "@std/async": "npm:@jsr/std__async@1",
     "@std/assert": "npm:@jsr/std__assert@1",
     "@std/testing": "npm:@jsr/std__testing@1",
-    "@valkyr/db": "npm:@jsr/valkyr__db@2",
     "@valkyr/testcontainers": "npm:@jsr/valkyr__testcontainers@2",
     "eslint": "9",
     "eslint-plugin-simple-import-sort": "12",
