@@ -92,7 +92,7 @@ type UserState = {
 };
 ```
 
-### Aggreates
+### Aggregates
 
 Event aggregates takes a entity stream and reduces it to a wanted state. It works on the same conceptual grounds as
 the standard reducer but resolved states using an aggregate instead of folding onto a state object.
