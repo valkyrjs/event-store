@@ -1,5 +1,6 @@
 import z, { ZodType } from "zod";
 
+import { Prettify } from "../types/utilities.ts";
 import { EventValidationError } from "./errors.ts";
 import { getLogicalTimestamp } from "./time.ts";
 import { toPrettyErrorLines } from "./zod.ts";
@@ -16,7 +17,7 @@ export class Event<TEventState extends EventState = EventState> {
    *
    * @param data - Schema used to parse and infer the data supported by the event.
    */
-  data<TData extends ZodType>(data: TData): Event<Omit<TEventState, "data"> & { data: TData }> {
+  data<TData extends ZodType>(data: TData): Event<Prettify<Omit<TEventState, "data"> & { data: TData }>> {
     return new Event<Omit<TEventState, "data"> & { data: TData }>({ ...this.state, data });
   }
 
@@ -26,7 +27,7 @@ export class Event<TEventState extends EventState = EventState> {
    *
    * @param meta - Schema used to parse and infer the meta supported by the event.
    */
-  meta<TMeta extends ZodType>(meta: TMeta): Event<Omit<TEventState, "meta"> & { meta: TMeta }> {
+  meta<TMeta extends ZodType>(meta: TMeta): Event<Prettify<Omit<TEventState, "meta"> & { meta: TMeta }>> {
     return new Event<Omit<TEventState, "meta"> & { meta: TMeta }>({ ...this.state, meta });
   }
 

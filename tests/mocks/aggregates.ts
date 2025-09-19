@@ -1,5 +1,5 @@
 import { AggregateRoot } from "../../libraries/aggregate.ts";
-import { Events } from "./events.ts";
+import { EventRecord, Events } from "./events.ts";
 
 export class User extends AggregateRoot<Events> {
   static override readonly name = "user";
@@ -19,7 +19,7 @@ export class User extends AggregateRoot<Events> {
   // Reducer
   // -------------------------------------------------------------------------
 
-  with(event: Events["$events"][number]["$record"]) {
+  with(event: EventRecord) {
     switch (event.type) {
       case "user:name:given-set": {
         this.name.given = event.data;

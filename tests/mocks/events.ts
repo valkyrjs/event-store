@@ -2,6 +2,7 @@ import z from "zod";
 
 import { event } from "../../libraries/event.ts";
 import { EventFactory } from "../../libraries/event-factory.ts";
+import { Prettify } from "../../types/utilities.ts";
 
 export const auditor = z.strictObject({ auditor: z.string() });
 
@@ -33,3 +34,5 @@ export const events = new EventFactory([
 ]);
 
 export type Events = typeof events;
+
+export type EventRecord = Prettify<Events["$events"][number]["$record"]>;
