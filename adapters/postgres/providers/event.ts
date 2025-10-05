@@ -3,7 +3,7 @@ import type { Helper } from "postgres";
 import type { EventRecord } from "../../../libraries/event.ts";
 import type { EventsProvider } from "../../../types/adapter.ts";
 import type { EventReadOptions } from "../../../types/query.ts";
-import type { PostgresDatabase } from "../database.ts";
+import type { Options, PostgresDatabase } from "../database.ts";
 
 type PGEventRecord = Omit<EventRecord, "data" | "meta"> & { data: string; meta: string };
 
@@ -25,8 +25,8 @@ export class PostgresEventsProvider implements EventsProvider {
    *
    * @param record - Event record to insert.
    */
-  async insert(record: EventRecord): Promise<void> {
-    await this.db.sql`INSERT INTO ${this.table} ${this.db.sql(this.#toDriver(record))}`.catch((error) => {
+  async insert(record: EventRecord, { tx }: Options = {}): Promise<void> {
+    await (tx ?? this.db.sql)`INSERT INTO ${this.table} ${this.db.sql(this.#toDriver(record))}`.catch((error) => {
       throw new Error(`EventStore > 'events.insert' failed with postgres error: ${error.message}`);
     });
   }
@@ -37,16 +37,22 @@ export class PostgresEventsProvider implements EventsProvider {
    * @param records   - Event records to insert.
    * @param batchSize - Batch size for the insert loop.
    */
-  async insertMany(records: EventRecord[], batchSize: number = 1_000): Promise<void> {
-    await this.db.sql
-      .begin(async (sql) => {
-        for (let i = 0; i < records.length; i += batchSize) {
-          await sql`INSERT INTO ${this.table} ${this.db.sql(records.slice(i, i + batchSize).map(this.#toDriver))}`;
-        }
-      })
-      .catch((error) => {
-        throw new Error(`EventStore > 'events.insertMany' failed with postgres error: ${error.message}`);
-      });
+  async insertMany(records: EventRecord[], batchSize: number = 1_000, { tx }: Options = {}): Promise<void> {
+    if (tx !== undefined) {
+      for (let i = 0; i < records.length; i += batchSize) {
+        await tx`INSERT INTO ${this.table} ${this.db.sql(records.slice(i, i + batchSize).map(this.#toDriver))}`;
+      }
+    } else {
+      await this.db.sql
+        .begin(async (sql) => {
+          for (let i = 0; i < records.length; i += batchSize) {
+            await sql`INSERT INTO ${this.table} ${this.db.sql(records.slice(i, i + batchSize).map(this.#toDriver))}`;
+          }
+        })
+        .catch((error) => {
+          throw new Error(`EventStore > 'events.insertMany' failed with postgres error: ${error.message}`);
+        });
+    }
   }
 
   /**
@@ -55,10 +61,10 @@ export class PostgresEventsProvider implements EventsProvider {
    *
    * @param options - Find options.
    */
-  async get(options: EventReadOptions): Promise<EventRecord[]> {
+  async get(options: EventReadOptions, { tx }: Options = {}): Promise<EventRecord[]> {
     if (options !== undefined) {
       const { filter, cursor, direction, limit } = options;
-      return this.db.sql<PGEventRecord[]>`
+      return (tx ?? this.db.sql)<PGEventRecord[]>`
         SELECT * FROM ${this.table} 
         WHERE
           ${filter?.types ? this.#withTypes(filter.types) : this.db.sql``}
@@ -79,8 +85,9 @@ export class PostgresEventsProvider implements EventsProvider {
   async getByStream(
     stream: string,
     { filter, cursor, direction, limit }: EventReadOptions = {},
+    { tx }: Options = {},
   ): Promise<EventRecord[]> {
-    return this.db.sql<PGEventRecord[]>`
+    return (tx ?? this.db.sql)<PGEventRecord[]>`
       SELECT * FROM ${this.table} 
       WHERE 
         stream = ${stream}
@@ -100,8 +107,9 @@ export class PostgresEventsProvider implements EventsProvider {
   async getByStreams(
     streams: string[],
     { filter, cursor, direction, limit }: EventReadOptions = {},
+    { tx }: Options = {},
   ): Promise<EventRecord[]> {
-    return this.db.sql<PGEventRecord[]>`
+    return (tx ?? this.db.sql)<PGEventRecord[]>`
       SELECT * FROM ${this.table} 
       WHERE 
         stream IN ${this.db.sql(streams)}
@@ -117,8 +125,8 @@ export class PostgresEventsProvider implements EventsProvider {
    *
    * @param id - Event id.
    */
-  async getById(id: string): Promise<EventRecord | undefined> {
-    return this.db.sql<PGEventRecord[]>`SELECT * FROM ${this.table} WHERE id = ${id}`
+  async getById(id: string, { tx }: Options = {}): Promise<EventRecord | undefined> {
+    return (tx ?? this.db.sql)<PGEventRecord[]>`SELECT * FROM ${this.table} WHERE id = ${id}`
       .then(this.#fromDriver)
       .then(([record]) => record);
   }
@@ -126,8 +134,8 @@ export class PostgresEventsProvider implements EventsProvider {
   /**
    * Check if the given event is outdated in relation to the local event data.
    */
-  async checkOutdated({ stream, type, created }: EventRecord): Promise<boolean> {
-    const count = await await this.db.sql`
+  async checkOutdated({ stream, type, created }: EventRecord, { tx }: Options = {}): Promise<boolean> {
+    const count = await (tx ?? this.db.sql)`
       SELECT COUNT(*) AS count
       FROM ${this.table}
       WHERE

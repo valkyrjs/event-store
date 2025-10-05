@@ -1,4 +1,4 @@
-import postgres, { type Sql } from "postgres";
+import postgres, { type Sql, TransactionSql } from "postgres";
 
 import { PostgresConnection } from "./connection.ts";
 
@@ -33,4 +33,8 @@ export class PostgresDatabase {
 
 export type DatabaseAccessor = {
   sql: Sql;
+};
+
+export type Options = {
+  tx?: TransactionSql;
 };

@@ -1,7 +1,7 @@
 import type { Helper } from "postgres";
 
 import type { Snapshot, SnapshotsProvider } from "../../../types/adapter.ts";
-import type { PostgresDatabase } from "../database.ts";
+import type { Options, PostgresDatabase } from "../database.ts";
 
 type PGSnapshot = Omit<Snapshot, "state"> & { state: string };
 
@@ -26,8 +26,8 @@ export class PostgresSnapshotsProvider implements SnapshotsProvider {
    * @param cursor - Cursor timestamp for the last event used in the snapshot.
    * @param state  - State of the reduced events.
    */
-  async insert(name: string, stream: string, cursor: string, state: any): Promise<void> {
-    await this.db.sql`
+  async insert(name: string, stream: string, cursor: string, state: any, { tx }: Options = {}): Promise<void> {
+    await (tx ?? this.db.sql)`
       INSERT INTO ${this.table} ${this.db.sql(this.#toDriver({ name, stream, cursor, state }))}`.catch((error) => {
       throw new Error(`EventStore > 'snapshots.insert' failed with postgres error: ${error.message}`);
     });
@@ -39,8 +39,8 @@ export class PostgresSnapshotsProvider implements SnapshotsProvider {
    * @param name   - Name of the reducer which the state was created.
    * @param stream - Stream the state was reduced for.
    */
-  async getByStream(name: string, stream: string): Promise<Snapshot | undefined> {
-    return this.db.sql<PGSnapshot[]>`SELECT * FROM ${this.table} WHERE name = ${name} AND stream = ${stream}`
+  async getByStream(name: string, stream: string, { tx }: Options = {}): Promise<Snapshot | undefined> {
+    return (tx ?? this.db.sql)<PGSnapshot[]>`SELECT * FROM ${this.table} WHERE name = ${name} AND stream = ${stream}`
       .then(this.#fromDriver)
       .then(([snapshot]) => snapshot)
       .catch((error) => {
@@ -54,8 +54,8 @@ export class PostgresSnapshotsProvider implements SnapshotsProvider {
    * @param name   - Name of the reducer the snapshot is attached to.
    * @param stream - Stream to remove from snapshots.
    */
-  async remove(name: string, stream: string): Promise<void> {
-    await this.db.sql`DELETE FROM ${this.table} WHERE name = ${name} AND stream = ${stream}`.catch((error) => {
+  async remove(name: string, stream: string, { tx }: Options = {}): Promise<void> {
+    await (tx ?? this.db.sql)`DELETE FROM ${this.table} WHERE name = ${name} AND stream = ${stream}`.catch((error) => {
       throw new Error(`EventStore > 'snapshots.remove' failed with postgres error: ${error.message}`);
     });
   }

@@ -559,7 +559,7 @@ type EventStoreConfig<TEventFactory extends EventFactory, TEventStoreAdapter ext
   hooks?: EventStoreHooks<TEventFactory>;
 };
 
-export type EventsInsertSettings = {
+export interface EventsInsertSettings {
   /**
    * Should the event store emit events after successfull insertion.
    * This only takes false as value and by default events are always
